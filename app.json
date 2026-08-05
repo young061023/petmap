@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "PetMap",
+    "slug": "petmap",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "petmap",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
