@@ -1,15 +1,18 @@
 # Dependencies
 node_modules/
 
-# Expo
+# Expo and Metro
 .expo/
 dist/
 web-build/
 expo-env.d.ts
+.metro-health-check*
 
 # Generated native projects
 /android/
 /ios/
+.kotlin/
+*.orig.*
 
 # Local configuration and secrets
 .env*
@@ -18,6 +21,7 @@ expo-env.d.ts
 *.p8
 *.p12
 *.key
+*.pem
 *.mobileprovision
 
 # Tooling and operating system files
