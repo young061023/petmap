@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "댕로컬",
+    "slug": "petmap",
+    "scheme": "petmap",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "plugins": ["expo-router"],
+    "experiments": { "typedRoutes": true },
+    "ios": { "supportsTablet": false, "bundleIdentifier": "com.petmap.daenglocal" },
+    "android": { "package": "com.petmap.daenglocal" }
+  }
+}
