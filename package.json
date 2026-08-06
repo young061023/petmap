@@ -48,6 +48,8 @@
     "react-native-url-polyfill": "^4.0.0",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.10.1",
+    "lucide-react-native": "^1.29.0",
+    "react-native-svg": "15.15.1",
     "three": "^0.185.1",
     "zustand": "^5.0.14"
   },
