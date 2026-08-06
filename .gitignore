@@ -1,10 +1,17 @@
+# Dependencies
 node_modules/
+
+# Expo
 .expo/
 dist/
 web-build/
 expo-env.d.ts
+
+# Generated native projects
 /android/
 /ios/
+
+# Local configuration and secrets
 .env*
 !.env.example
 *.jks
@@ -12,6 +19,8 @@ expo-env.d.ts
 *.p12
 *.key
 *.mobileprovision
+
+# Tooling and operating system files
 .DS_Store
 *.tsbuildinfo
 npm-debug.*
