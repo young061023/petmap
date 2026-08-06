@@ -17,23 +17,15 @@
 
 현재 이 프로젝트는 **git 커밋이 하나도 없고 원격 저장소도 없는 상태**. 아래 둘 중 하나로 옮기면 됨.
 
-### 방법 A — GitHub 사용 (권장)
+### 방법 A — GitHub 사용 (권장, 이미 완료됨)
 
-원래 컴퓨터에서:
-```bash
-git add .
-git commit -m "initial scaffold"
-```
-GitHub에 **private** 저장소 생성 후(무료):
-```bash
-git remote add origin <저장소 URL>
-git push -u origin master
-```
+`https://github.com/kplime/petmap` (private)에 이미 push 해둠.
 
 새 컴퓨터에서:
 ```bash
-git clone <저장소 URL>
+git clone https://github.com/kplime/petmap.git
 ```
+(GitHub 로그인 필요 — 새 컴퓨터에 `gh auth login` 또는 자격 증명 입력)
 
 ### 방법 B — 폴더 통째로 복사 (AirDrop / USB / 클라우드 드라이브)
 
