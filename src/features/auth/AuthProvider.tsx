@@ -6,7 +6,7 @@ import { supabase } from '@/services/supabase';
 import type { AuthStatus, SignInInput, SignUpInput } from '@/types/auth';
 import type { PetProfile, UserProfile } from '@/types/user';
 
-interface AuthContextValue { status: AuthStatus; profile: UserProfile | null; signIn: (input: SignInInput) => Promise<void>; signUp: (input: SignUpInput) => Promise<boolean>; signOut: () => Promise<void>; savePet: (pet: Omit<PetProfile, 'id'>) => Promise<void>; }
+interface AuthContextValue { status: AuthStatus; profile: UserProfile | null; signIn: (input: SignInInput) => Promise<void>; signUp: (input: SignUpInput) => Promise<boolean>; signOut: () => Promise<void>; savePet: (pet: Omit<PetProfile, 'id'>) => Promise<void>; updatePetName: (name: string) => Promise<void>; }
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: PropsWithChildren) {
@@ -27,10 +27,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
   const value = useMemo<AuthContextValue>(() => ({
     status, profile,
-    signIn: async (input) => { setProfile(await authService.signIn(input)); setStatus('authenticated'); },
+    signIn: async (input) => { const next = await authService.signIn(input); const pet = await profileService.getPet(next.id); setProfile({ ...next, pet }); setStatus('authenticated'); },
     signUp: async (input) => { const next = await authService.signUp(input); if (!next) return false; setProfile(next); setStatus('authenticated'); return true; },
     signOut: async () => { await authService.signOut(); setProfile(null); setStatus('unauthenticated'); },
     savePet: async (pet) => { if (!profile) throw new Error('로그인이 필요해요.'); setProfile(await profileService.updatePet(profile, pet)); },
+    updatePetName: async (name) => { if (!profile) throw new Error('로그인이 필요해요.'); setProfile(await profileService.updatePetName(profile, name)); },
   }), [profile, status]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -13,8 +13,10 @@ import type { Mission, MissionStatus } from '@/types/mission';
 interface MissionCardProps {
   mission: Mission;
   isClaiming: boolean;
+  isCompleting: boolean;
   onPress: () => void;
   onClaim: () => void;
+  onComplete: () => void;
 }
 
 const statusPresentation: Record<MissionStatus, { label: string; background: string; color: string }> = {
@@ -35,7 +37,7 @@ const statusPresentation: Record<MissionStatus, { label: string; background: str
   },
 };
 
-export function MissionCard({ mission, isClaiming, onPress, onClaim }: MissionCardProps) {
+export function MissionCard({ mission, isClaiming, isCompleting, onPress, onClaim, onComplete }: MissionCardProps) {
   const status = getMissionStatus(mission);
   const presentation = statusPresentation[status];
   const progressText = formatMissionProgress(mission);
@@ -100,6 +102,27 @@ export function MissionCard({ mission, isClaiming, onPress, onClaim }: MissionCa
             <ActivityIndicator color={missionColors.onPrimary} />
           ) : (
             <Text style={styles.claimButtonText}>보상 받기</Text>
+          )}
+        </Pressable>
+      )}
+
+      {status === 'inProgress' && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${mission.title} 완료하기`}
+          accessibilityState={{ disabled: isCompleting }}
+          disabled={isCompleting}
+          onPress={onComplete}
+          style={({ pressed }) => [
+            styles.completeButton,
+            pressed && styles.claimButtonPressed,
+            isCompleting && styles.claimButtonDisabled,
+          ]}
+        >
+          {isCompleting ? (
+            <ActivityIndicator color={missionColors.onPrimary} />
+          ) : (
+            <Text style={styles.claimButtonText}>완료하기</Text>
           )}
         </Pressable>
       )}
@@ -201,6 +224,16 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   claimButton: {
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: missionSpacing.lg,
+    marginBottom: missionSpacing.lg,
+    paddingHorizontal: missionSpacing.lg,
+    borderRadius: 14,
+    backgroundColor: missionColors.primary,
+  },
+  completeButton: {
     minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',

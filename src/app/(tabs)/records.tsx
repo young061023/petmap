@@ -8,7 +8,8 @@ import { Header } from '@/components/Header';
 import { MissionsModal } from '@/components/MissionsModal';
 import { PetNameModal } from '@/components/PetNameModal';
 import { WeeklyCalendar } from '@/components/WeeklyCalendar';
-import { petService } from '@/services/petService';
+import { useAuth } from '@/features/auth/AuthProvider';
+import { useMissions } from '@/features/missions/MissionProvider';
 import { recordService } from '@/services/recordService';
 import { theme } from '@/theme/theme';
 import type { ActivityCategory, MissionItem, TimelineActivity } from '@/types/record';
@@ -21,35 +22,40 @@ function formatDateString(date: Date): string {
 }
 
 export default function RecordsScreen() {
-  const [petName, setPetName] = useState('몽이');
-  const [selectedDate, setSelectedDate] = useState(new Date(2026, 7, 4));
+  const { profile, updatePetName } = useAuth();
+  const { missions: dashboardMissions, setCompleted } = useMissions();
+  const petName = profile?.pet?.name ?? '반려견';
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [activities, setActivities] = useState<TimelineActivity[]>([]);
-  const [missions, setMissions] = useState<MissionItem[]>([]);
   const [petModalVisible, setPetModalVisible] = useState(false);
   const [missionsModalVisible, setMissionsModalVisible] = useState(false);
   const [addRecordModalVisible, setAddRecordModalVisible] = useState(false);
 
   const loadData = useCallback(async () => {
     const date = formatDateString(selectedDate);
-    const [nextActivities, nextMissions] = await Promise.all([
-      recordService.getActivitiesByDate(date),
-      recordService.getMissionsByDate(date),
-    ]);
-    setActivities(nextActivities);
-    setMissions(nextMissions);
+    try {
+      const nextActivities = await recordService.getActivitiesByDate(date);
+      setActivities(nextActivities);
+    } catch {
+      setActivities([]);
+    }
   }, [selectedDate]);
 
-  useEffect(() => {
-    void petService.getPetInfo().then((pet) => setPetName(pet.name));
-  }, []);
+  const missions: MissionItem[] = dashboardMissions
+    .filter((mission) => mission.period === 'daily' && mission.assignedDate === formatDateString(selectedDate))
+    .map((mission) => ({
+      id: mission.id,
+      title: mission.title,
+      completed: mission.progress >= mission.target,
+      category: mission.category,
+    }));
 
   useEffect(() => {
     void loadData();
   }, [loadData]);
 
   const handleSavePetName = async (name: string) => {
-    const pet = await petService.updatePetName(name);
-    setPetName(pet.name);
+    await updatePetName(name);
   };
 
   const handleChangeDateByDay = (offset: number) => {
@@ -59,8 +65,8 @@ export default function RecordsScreen() {
   };
 
   const handleToggleMission = async (missionId: string) => {
-    const updated = await recordService.toggleMission(formatDateString(selectedDate), missionId);
-    setMissions(updated);
+    const mission = missions.find((item) => item.id === missionId);
+    if (mission) await setCompleted(missionId, !mission.completed);
   };
 
   const handleAddRecord = async (data: {

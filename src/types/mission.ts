@@ -18,6 +18,7 @@ export interface Mission {
   unit: string;
   deadlineLabel: string;
   instructions: string[];
+  assignedDate: string;
   claimedAt?: string;
 }
 

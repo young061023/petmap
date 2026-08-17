@@ -8,10 +8,12 @@ import {
 } from 'react';
 
 import { getMissionStatus } from '@/features/missions/missionUtils';
+import { useAuth } from '@/features/auth/AuthProvider';
 import {
   claimMissionReward,
   fetchMissionDashboard,
   getMillisecondsUntilNextMissionRotation,
+  setMissionCompletion,
 } from '@/services/missionService';
 import type { Mission } from '@/types/mission';
 
@@ -23,11 +25,13 @@ interface MissionContextValue {
   errorMessage: string | null;
   claimingMissionId: string | null;
   claimReward: (missionId: string) => Promise<boolean>;
+  setCompleted: (missionId: string, completed: boolean) => Promise<boolean>;
 }
 
 const MissionContext = createContext<MissionContextValue | undefined>(undefined);
 
 export function MissionProvider({ children }: PropsWithChildren) {
+  const { status } = useAuth();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [points, setPoints] = useState(0);
   const [streakDays, setStreakDays] = useState(0);
@@ -37,6 +41,13 @@ export function MissionProvider({ children }: PropsWithChildren) {
   const pendingClaims = useRef(new Set<string>());
 
   useEffect(() => {
+    if (status !== 'authenticated') {
+      setMissions([]);
+      setIsLoading(status === 'loading');
+      return;
+    }
+
+    setIsLoading(true);
     let isMounted = true;
     let rotationTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -84,7 +95,7 @@ export function MissionProvider({ children }: PropsWithChildren) {
         clearTimeout(rotationTimer);
       }
     };
-  }, []);
+  }, [status]);
 
   const claimReward = async (missionId: string): Promise<boolean> => {
     const mission = missions.find((item) => item.id === missionId);
@@ -111,12 +122,24 @@ export function MissionProvider({ children }: PropsWithChildren) {
       );
       setPoints((currentPoints) => currentPoints + mission.rewardPoints);
       return true;
-    } catch {
+    } catch (error) {
+      console.error('Failed to claim mission reward:', error);
       setErrorMessage('보상을 받지 못했어요. 잠시 후 다시 시도해 주세요.');
       return false;
     } finally {
       pendingClaims.current.delete(missionId);
       setClaimingMissionId(null);
+    }
+  };
+
+  const setCompleted = async (missionId: string, completed: boolean): Promise<boolean> => {
+    try {
+      const updated = await setMissionCompletion(missionId, completed);
+      setMissions((current) => current.map((mission) => mission.id === updated.id ? updated : mission));
+      return true;
+    } catch {
+      setErrorMessage('미션 상태를 저장하지 못했어요.');
+      return false;
     }
   };
 
@@ -130,6 +153,7 @@ export function MissionProvider({ children }: PropsWithChildren) {
         errorMessage,
         claimingMissionId,
         claimReward,
+        setCompleted,
       }}
     >
       {children}

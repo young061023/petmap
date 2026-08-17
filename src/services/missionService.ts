@@ -6,6 +6,8 @@ import type {
   MissionPeriod,
 } from '@/types/mission';
 
+import { supabase } from './supabase';
+
 interface MissionTemplate {
   key: string;
   title: string;
@@ -445,8 +447,6 @@ function createMission(
   rotationKey: string,
   index: number,
 ): Mission {
-  const isPreclaimedDemoMission = period === 'daily' && index === 2;
-
   return {
     id: `${period}-${rotationKey}-${template.key}`,
     title: template.title,
@@ -454,12 +454,12 @@ function createMission(
     category: template.category,
     period,
     rewardPoints: template.rewardPoints,
-    progress: getDemoProgress(template, index, period),
+    progress: 0,
     target: template.target,
     unit: template.unit,
     deadlineLabel: period === 'daily' ? '오늘 자정까지' : '일요일 자정까지',
     instructions: [...template.instructions],
-    claimedAt: isPreclaimedDemoMission ? `${rotationKey}T00:00:00.000Z` : undefined,
+    assignedDate: rotationKey,
   };
 }
 
@@ -489,24 +489,82 @@ export function getMillisecondsUntilNextMissionRotation(referenceDate = new Date
 }
 
 export async function fetchMissionDashboard(referenceDate = new Date()): Promise<MissionDashboard> {
-  await wait(250);
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) throw new Error('Authentication required');
+
+  const { error: assignmentError } = await supabase.rpc('ensure_example_missions');
+  if (assignmentError) throw new Error('Missions could not be prepared');
+
+  const dailyKey = formatLocalDate(referenceDate);
+  const weeklyKey = getWeekRotationKey(referenceDate);
+
+  const { data: missionRows, error: missionError } = await supabase
+    .from('user_missions')
+    .select('*')
+    .eq('user_id', userData.user.id)
+    .in('assigned_date', [dailyKey, weeklyKey])
+    .order('period')
+    .order('created_at');
+  if (missionError) throw new Error('Missions could not be loaded');
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('point_balance')
+    .eq('id', userData.user.id)
+    .maybeSingle();
 
   return {
-    points: 1250,
-    streakDays: 7,
-    missions: createMissionsForDate(referenceDate),
+    points: Number(profile?.point_balance ?? 0),
+    streakDays: 0,
+    missions: (missionRows ?? []).map((row) => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      category: row.category,
+      period: row.period,
+      rewardPoints: row.reward_points,
+      progress: row.progress,
+      target: row.target,
+      unit: row.unit,
+      deadlineLabel: row.deadline_label,
+      instructions: row.instructions,
+      assignedDate: row.assigned_date,
+      claimedAt: row.claimed_at ?? undefined,
+    })),
   };
 }
 
 export async function claimMissionReward(missionId: string): Promise<MissionClaimResult> {
-  await wait(300);
+  const { data, error } = await supabase.rpc('claim_mission_reward', { p_mission_id: missionId });
+  if (error || !data) throw new Error(error?.message ?? 'Mission reward could not be claimed');
+  const result = Array.isArray(data) ? data[0] : data;
+  return { missionId: result.mission_id, claimedAt: result.claimed_at };
+}
 
-  if (!createMissionsForDate().some((mission) => mission.id === missionId)) {
-    throw new Error('Mission not found');
-  }
-
+export async function setMissionCompletion(missionId: string, completed: boolean): Promise<Mission> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) throw new Error('Authentication required');
+  const { data: current, error: readError } = await supabase
+    .from('user_missions')
+    .select('*')
+    .eq('user_id', userData.user.id)
+    .eq('id', missionId)
+    .single();
+  if (readError) throw new Error('Mission not found');
+  const { data, error } = await supabase
+    .from('user_missions')
+    .update({ progress: completed ? current.target : 0 })
+    .eq('user_id', userData.user.id)
+    .eq('id', missionId)
+    .is('claimed_at', null)
+    .select()
+    .single();
+  if (error) throw new Error('Mission could not be updated');
   return {
-    missionId,
-    claimedAt: new Date().toISOString(),
+    id: data.id, title: data.title, description: data.description, category: data.category,
+    period: data.period, rewardPoints: data.reward_points, progress: data.progress,
+    target: data.target, unit: data.unit, deadlineLabel: data.deadline_label,
+    instructions: data.instructions, assignedDate: data.assigned_date,
+    claimedAt: data.claimed_at ?? undefined,
   };
 }
