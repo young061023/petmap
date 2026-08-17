@@ -1,1 +1,1 @@
-export { default } from '../mypage';
+export { default } from '@/features/profile/MyPageScreen';
