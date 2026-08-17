@@ -14,7 +14,7 @@ export default function LoginScreen() {
   const submit = async () => {
     if (!email.trim() || !password) { setError('이메일과 비밀번호를 입력해 주세요.'); return; }
     setLoading(true); setError('');
-    try { await signIn({ email, password }); router.replace('/mypage'); }
+    try { await signIn({ email, password }); router.replace('/(tabs)/mypage'); }
     catch (caught) { setError(caught instanceof Error ? caught.message : '로그인하지 못했어요.'); }
     finally { setLoading(false); }
   };
