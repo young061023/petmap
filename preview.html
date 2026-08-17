@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>PetMap character preview</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6/dist/maplibre-gl.css" />
+<style>
+  html, body, #map { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #ddd; }
+  #status { position: absolute; top: 8px; left: 8px; z-index: 10; color: #fff; font: 12px sans-serif;
+    background: rgba(0,0,0,0.55); padding: 4px 8px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="status">loading...</div>
+<script type="importmap">
+{
+  "imports": {
+    "maplibre-gl": "https://unpkg.com/maplibre-gl@6/dist/maplibre-gl.js",
+    "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+    "three/addons/loaders/GLTFLoader.js": "https://unpkg.com/three@0.170.0/examples/jsm/loaders/GLTFLoader.js"
+  }
+}
+</script>
+<script type="module">
+import * as maplibregl from 'maplibre-gl';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+// Standalone browser copy of src/web-map/map-html.ts's characterLayer, for
+// eyeballing the fix locally without an Android device. No RN bridge here:
+// location is a fixed test point, the model loads from ./assets/models/fox.glb
+// via a normal fetch, and maplibre/three load from CDN (this browser has real
+// network access, unlike the Android WebView the original file works around).
+const TEST_LNGLAT = [128.8669941, 35.2408147]; // same spot used while debugging on-device
+const BASE_ZOOM = 18;
+const IDLE_CLIP = 'Survey';
+const WALK_CLIP = 'Walk';
+const MODEL_SCALE_METERS = 6;
+
+let map = null;
+let mixer = null;
+let characterGroup = null;
+
+function setStatus(t) { document.getElementById('status').textContent = t; }
+
+const characterLayer = {
+  id: 'character-3d',
+  type: 'custom',
+  renderingMode: '3d',
+  onAdd(mapInstance, gl) {
+    this.camera = new THREE.Camera();
+    this.scene = new THREE.Scene();
+    this.scene.add(new THREE.AmbientLight(0xffffff, 1));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 2);
+    dirLight.position.set(0, 10, 5);
+    this.scene.add(dirLight);
+
+    characterGroup = new THREE.Group();
+    this.scene.add(characterGroup);
+
+    this.renderer = new THREE.WebGLRenderer({ canvas: mapInstance.getCanvas(), context: gl, antialias: true });
+    this.renderer.autoClear = false;
+
+    new GLTFLoader().load('./assets/models/fox.glb', (gltf) => {
+      const model = gltf.scene;
+      const CHARACTER_SCALE = 0.02;
+      const box = new THREE.Box3().setFromObject(model);
+      const center = box.getCenter(new THREE.Vector3());
+      model.scale.setScalar(CHARACTER_SCALE);
+      model.position.set(-center.x * CHARACTER_SCALE, -box.min.y * CHARACTER_SCALE, -center.z * CHARACTER_SCALE);
+      characterGroup.add(model);
+
+      mixer = new THREE.AnimationMixer(model);
+      const idleClip = THREE.AnimationClip.findByName(gltf.animations, IDLE_CLIP);
+      const action = idleClip ? mixer.clipAction(idleClip) : null;
+      if (action) action.play();
+      setStatus('');
+
+      const clock = new THREE.Clock();
+      (function tick() {
+        requestAnimationFrame(tick);
+        if (mixer) mixer.update(clock.getDelta());
+      })();
+    }, undefined, (err) => setStatus('model load failed: ' + err.message));
+  },
+  render(gl, args) {
+    const mc = maplibregl.MercatorCoordinate.fromLngLat(TEST_LNGLAT, 0);
+    const scale = mc.meterInMercatorCoordinateUnits() * MODEL_SCALE_METERS;
+    const rotationX = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+    const l = new THREE.Matrix4()
+      .makeTranslation(mc.x, mc.y, mc.z)
+      .scale(new THREE.Vector3(scale, -scale, scale))
+      .multiply(rotationX);
+    // The fix: mainMatrix (mercator-space), not modelViewProjectionMatrix (tile-space).
+    const m = new THREE.Matrix4().fromArray(args.defaultProjectionData.mainMatrix);
+    this.camera.projectionMatrix = m.multiply(l);
+
+    this.renderer.resetState();
+    this.renderer.render(this.scene, this.camera);
+    map.triggerRepaint();
+  },
+};
+
+map = new maplibregl.Map({
+  container: 'map',
+  style: 'https://tiles.openfreemap.org/styles/liberty',
+  center: TEST_LNGLAT,
+  zoom: BASE_ZOOM,
+  pitch: 60,
+});
+map.on('load', () => map.addLayer(characterLayer));
+map.on('error', (e) => setStatus('map error: ' + (e && e.error && e.error.message)));
+</script>
+</body>
+</html>
