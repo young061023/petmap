@@ -5,7 +5,7 @@ import { Component, Suspense, useCallback, useEffect, useRef, useState, type Rea
 import { Animated, View } from 'react-native';
 import type { Group } from 'three';
 
-const SIZE = 72;
+const SIZE = 112;
 const IDLE_CLIP = 'Survey';
 const WALK_CLIP = 'Walk';
 const CROSSFADE_SECONDS = 0.3;

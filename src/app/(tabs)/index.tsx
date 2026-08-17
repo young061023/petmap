@@ -8,7 +8,7 @@ import {
 } from '@maplibre/maplibre-react-native';
 import * as Location from 'expo-location';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, type NativeSyntheticEvent } from 'react-native';
+import { ActivityIndicator, StyleSheet, View, type NativeSyntheticEvent } from 'react-native';
 
 import { PetCharacter3D } from '@/components/pet-character-3d';
 import { ThemedText } from '@/components/themed-text';
@@ -18,6 +18,12 @@ import { snapToNearestRoad, type Coordinates } from '@/utils/snapToRoad';
 
 const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
 const WALK_ANIMATION_MS = 1000;
+// The zoom the character's on-screen size (PetCharacter3D's fixed SIZE) was
+// tuned at — scale relative to this so it shrinks/grows with the map instead
+// of staying a constant pixel size while the map zooms under it.
+const BASE_ZOOM = 18;
+const MIN_CHARACTER_SCALE = 0.2;
+const MAX_CHARACTER_SCALE = 1.5;
 
 // How many consecutive 300ms occlusion polls must land on a building before
 // the character actually hides — filters out single-pixel grazes from
@@ -67,6 +73,7 @@ export default function MapScreen() {
   // finished loading its style — gate every caller on this instead of just
   // checking mapRef.current, which is truthy as soon as the ref attaches.
   const [mapReady, setMapReady] = useState(false);
+  const [zoom, setZoom] = useState(BASE_ZOOM);
 
   const walkFromRef = useRef<Coordinates | null>(null);
   const headingRef = useRef(0);
@@ -253,12 +260,14 @@ export default function MapScreen() {
   }, [mapReady]);
 
   const handleRegionIsChanging = useCallback((event: NativeSyntheticEvent<ViewStateChangeEvent>) => {
+    setZoom(event.nativeEvent.zoom);
     if (!event.nativeEvent.userInteraction) return;
     isUserInteractingRef.current = true;
     if (resumeTimeoutRef.current != null) clearTimeout(resumeTimeoutRef.current);
   }, []);
 
   const handleRegionDidChange = useCallback((event: NativeSyntheticEvent<ViewStateChangeEvent>) => {
+    setZoom(event.nativeEvent.zoom);
     if (!event.nativeEvent.userInteraction) return;
     if (resumeTimeoutRef.current != null) clearTimeout(resumeTimeoutRef.current);
     resumeTimeoutRef.current = setTimeout(() => {
@@ -282,7 +291,7 @@ export default function MapScreen() {
       if (!coords) return;
       cameraRef.current?.easeTo({
         center: [coords.longitude, coords.latitude],
-        zoom: 18,
+        zoom: BASE_ZOOM,
         pitch: 60,
         duration: FOLLOW_EASE_DURATION_MS,
       });
@@ -307,6 +316,11 @@ export default function MapScreen() {
     );
   }
 
+  const characterScale = Math.min(
+    MAX_CHARACTER_SCALE,
+    Math.max(MIN_CHARACTER_SCALE, 2 ** (zoom - BASE_ZOOM)),
+  );
+
   return (
     <Map
       ref={mapRef}
@@ -320,12 +334,14 @@ export default function MapScreen() {
         ref={cameraRef}
         initialViewState={{
           center: [displayCoords.longitude, displayCoords.latitude],
-          zoom: 18,
+          zoom: BASE_ZOOM,
           pitch: 60,
         }}
       />
       <Marker lngLat={[displayCoords.longitude, displayCoords.latitude]} anchor="center">
-        <PetCharacter3D heading={displayHeading} isMoving={isMoving} hidden={isBehindBuilding} />
+        <View style={{ transform: [{ scale: characterScale }] }}>
+          <PetCharacter3D heading={displayHeading} isMoving={isMoving} hidden={isBehindBuilding} />
+        </View>
       </Marker>
     </Map>
   );
