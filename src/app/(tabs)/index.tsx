@@ -19,6 +19,11 @@ import { snapToNearestRoad, type Coordinates } from '@/utils/snapToRoad';
 const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
 const WALK_ANIMATION_MS = 1000;
 
+// How many consecutive 300ms occlusion polls must land on a building before
+// the character actually hides — filters out single-pixel grazes from
+// nearby rooflines at steep camera pitch (see checkOcclusion below).
+const OCCLUSION_HITS_TO_HIDE = 3;
+
 // Exponential moving average weight applied to each raw GPS fix — lower
 // values smooth out more jitter at the cost of a little lag.
 const GPS_SMOOTHING_ALPHA = 0.35;
@@ -58,6 +63,10 @@ export default function MapScreen() {
   const [isMoving, setIsMoving] = useState(false);
   const [isBehindBuilding, setIsBehindBuilding] = useState(false);
   const [snappedLocation, setSnappedLocation] = useState<Coordinates | null>(null);
+  // map.project() can throw a native exception if called before the map has
+  // finished loading its style — gate every caller on this instead of just
+  // checking mapRef.current, which is truthy as soon as the ref attaches.
+  const [mapReady, setMapReady] = useState(false);
 
   const walkFromRef = useRef<Coordinates | null>(null);
   const headingRef = useRef(0);
@@ -113,6 +122,11 @@ export default function MapScreen() {
   useEffect(() => {
     if (!location) return;
 
+    if (!mapReady) {
+      setSnappedLocation(location);
+      return;
+    }
+
     let cancelled = false;
 
     (async () => {
@@ -133,14 +147,21 @@ export default function MapScreen() {
     return () => {
       cancelled = true;
     };
-  }, [location]);
+  }, [location, mapReady]);
 
   useEffect(() => {
     if (!snappedLocation) return;
 
     const from = walkFromRef.current ?? snappedLocation;
     const to = snappedLocation;
-    const movedEnough = Math.abs(to.latitude - from.latitude) > 1e-9 || Math.abs(to.longitude - from.longitude) > 1e-9;
+    // ~1e-9 deg is sub-millimeter — that threshold treated ordinary GPS/snap
+    // noise as "the character walked," retriggering the walk animation (and
+    // nudging the marker) constantly even while standing still. ~3e-6 deg is
+    // roughly a third of a meter, closer to what GPS noise actually looks like.
+    const MOVED_THRESHOLD_DEG = 3e-6;
+    const movedEnough =
+      Math.abs(to.latitude - from.latitude) > MOVED_THRESHOLD_DEG ||
+      Math.abs(to.longitude - from.longitude) > MOVED_THRESHOLD_DEG;
     const fromHeading = headingRef.current;
     const toHeading = movedEnough ? bearingBetween(from, to) : fromHeading;
     const start = Date.now();
@@ -179,22 +200,45 @@ export default function MapScreen() {
   // checks whether a building is rendered there — i.e. whether a building
   // sits between the camera and the character.
   useEffect(() => {
+    if (!mapReady) return;
+
     let cancelled = false;
+    let consecutiveHits = 0;
 
     const checkOcclusion = async () => {
+      // Skip while the user is actively panning/zooming — these queries cross
+      // the native bridge and can contend with the map's own per-frame work,
+      // which is what makes the character's marker visibly lag behind the
+      // map during a drag instead of tracking it exactly.
+      if (isUserInteractingRef.current) return;
+
       const coords = displayCoordsRef.current;
       const map = mapRef.current;
       if (!coords || !map) {
+        consecutiveHits = 0;
         if (!cancelled) setIsBehindBuilding(false);
         return;
       }
       try {
         const screenPoint = await map.project([coords.longitude, coords.latitude]);
         const features = await map.queryRenderedFeatures(screenPoint, { layers: ['building-3d'] });
-        if (!cancelled) setIsBehindBuilding((features?.length ?? 0) > 0);
+        if ((features?.length ?? 0) > 0) {
+          // A single query is a single screen pixel — at a steep pitch, a
+          // nearby tall building's roofline can sweep across that pixel
+          // without actually standing between the camera and the character.
+          // Require it to land on consecutive polls before hiding, so a
+          // one-off graze doesn't pop the character out; any clear result
+          // un-hides immediately.
+          consecutiveHits += 1;
+          if (!cancelled && consecutiveHits >= OCCLUSION_HITS_TO_HIDE) setIsBehindBuilding(true);
+        } else {
+          consecutiveHits = 0;
+          if (!cancelled) setIsBehindBuilding(false);
+        }
       } catch {
         // Query failed (e.g. map not ready yet) — fail open so the character
         // never gets stuck hidden.
+        consecutiveHits = 0;
         if (!cancelled) setIsBehindBuilding(false);
       }
     };
@@ -206,7 +250,7 @@ export default function MapScreen() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, []);
+  }, [mapReady]);
 
   const handleRegionIsChanging = useCallback((event: NativeSyntheticEvent<ViewStateChangeEvent>) => {
     if (!event.nativeEvent.userInteraction) return;
@@ -270,6 +314,7 @@ export default function MapScreen() {
       mapStyle={MAP_STYLE_URL}
       onRegionIsChanging={handleRegionIsChanging}
       onRegionDidChange={handleRegionDidChange}
+      onDidFinishLoadingMap={() => setMapReady(true)}
     >
       <Camera
         ref={cameraRef}
@@ -279,11 +324,9 @@ export default function MapScreen() {
           pitch: 60,
         }}
       />
-      {!isBehindBuilding && (
-        <Marker lngLat={[displayCoords.longitude, displayCoords.latitude]} anchor="center">
-          <PetCharacter3D heading={displayHeading} isMoving={isMoving} />
-        </Marker>
-      )}
+      <Marker lngLat={[displayCoords.longitude, displayCoords.latitude]} anchor="center">
+        <PetCharacter3D heading={displayHeading} isMoving={isMoving} hidden={isBehindBuilding} />
+      </Marker>
     </Map>
   );
 }
