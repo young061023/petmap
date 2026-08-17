@@ -3,9 +3,9 @@ import type { DailySummary, TimelineActivity } from '../types/record';
 import { supabase } from './supabase';
 
 async function getUserId(): Promise<string> {
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) throw new Error('기록을 저장하려면 로그인이 필요해요.');
-  return data.user.id;
+  const { data, error } = await supabase.auth.getSession();
+  if (error || !data.session?.user) throw new Error('기록을 저장하려면 로그인이 필요해요.');
+  return data.session.user.id;
 }
 
 const mapActivity = (row: Record<string, unknown>): TimelineActivity => ({

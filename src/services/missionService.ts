@@ -489,8 +489,9 @@ export function getMillisecondsUntilNextMissionRotation(referenceDate = new Date
 }
 
 export async function fetchMissionDashboard(referenceDate = new Date()): Promise<MissionDashboard> {
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) throw new Error('Authentication required');
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !sessionData.session?.user) throw new Error('Authentication required');
+  const userId = sessionData.session.user.id;
 
   const { error: assignmentError } = await supabase.rpc('ensure_example_missions');
   if (assignmentError) throw new Error('Missions could not be prepared');
@@ -501,7 +502,7 @@ export async function fetchMissionDashboard(referenceDate = new Date()): Promise
   const { data: missionRows, error: missionError } = await supabase
     .from('user_missions')
     .select('*')
-    .eq('user_id', userData.user.id)
+    .eq('user_id', userId)
     .in('assigned_date', [dailyKey, weeklyKey])
     .order('period')
     .order('created_at');
@@ -510,7 +511,7 @@ export async function fetchMissionDashboard(referenceDate = new Date()): Promise
   const { data: profile } = await supabase
     .from('profiles')
     .select('point_balance')
-    .eq('id', userData.user.id)
+    .eq('id', userId)
     .maybeSingle();
 
   return {
@@ -542,19 +543,20 @@ export async function claimMissionReward(missionId: string): Promise<MissionClai
 }
 
 export async function setMissionCompletion(missionId: string, completed: boolean): Promise<Mission> {
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) throw new Error('Authentication required');
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !sessionData.session?.user) throw new Error('Authentication required');
+  const userId = sessionData.session.user.id;
   const { data: current, error: readError } = await supabase
     .from('user_missions')
     .select('*')
-    .eq('user_id', userData.user.id)
+    .eq('user_id', userId)
     .eq('id', missionId)
     .single();
   if (readError) throw new Error('Mission not found');
   const { data, error } = await supabase
     .from('user_missions')
     .update({ progress: completed ? current.target : 0 })
-    .eq('user_id', userData.user.id)
+    .eq('user_id', userId)
     .eq('id', missionId)
     .is('claimed_at', null)
     .select()
