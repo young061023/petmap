@@ -1,12 +1,10 @@
 import { Redirect, Tabs } from 'expo-router';
-import { ActivityIndicator, StyleSheet, Text, View, type ColorValue } from 'react-native';
+import { ClipboardList, Map, Target, User } from 'lucide-react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
+import { RadialTabBar } from '@/components/RadialTabBar';
 import { colors } from '@/constants/theme';
 import { useAuth } from '@/features/auth/AuthProvider';
-
-function TabIcon({ emoji, color }: { emoji: string; color: ColorValue }) {
-  return <Text style={{ fontSize: 20, color }}>{emoji}</Text>;
-}
 
 export default function TabLayout() {
   const { status } = useAuth();
@@ -20,33 +18,33 @@ export default function TabLayout() {
   }
 
   return (
-    <Tabs screenOptions={{ headerShown: false }}>
+    <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <RadialTabBar {...props} />}>
       <Tabs.Screen
         name="index"
         options={{
           title: '지도',
-          tabBarIcon: ({ color }) => <TabIcon emoji="🗺️" color={color} />,
+          tabBarIcon: ({ color, size }) => <Map color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="records"
         options={{
           title: '기록',
-          tabBarIcon: ({ color }) => <TabIcon emoji="📝" color={color} />,
+          tabBarIcon: ({ color, size }) => <ClipboardList color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="mission"
         options={{
           title: '미션',
-          tabBarIcon: ({ color }) => <TabIcon emoji="🎯" color={color} />,
+          tabBarIcon: ({ color, size }) => <Target color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="mypage"
         options={{
           title: '마이페이지',
-          tabBarIcon: ({ color }) => <TabIcon emoji="👤" color={color} />,
+          tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
         }}
       />
     </Tabs>
