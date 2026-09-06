@@ -105,6 +105,12 @@ const BASE_ZOOM = 18;
 const IDLE_CLIP = 'Survey';
 const WALK_CLIP = 'Walk';
 const CROSSFADE_SECONDS = 0.3;
+// Pokémon GO-style camera: re-center on the character on every GPS fix
+// (fixes arrive ~every 2s, so a short ease never overlaps the next one).
+// If the user drags/zooms the map themselves, following pauses and resumes
+// on its own a couple seconds after they let go.
+const FOLLOW_EASE_MS = 350;
+const FOLLOW_RESUME_DELAY_MS = 2500;
 // Fox.glb is modeled in meters at roughly real-world fox size; scale it up
 // so it reads clearly against building/road geometry at street zoom levels
 // (tuned by eye, matches the native version's on-screen presence).
@@ -122,6 +128,8 @@ let currentLngLat = null;
 let currentHeadingRad = 0;
 let workerReady = false;
 let pendingMapCenter = null;
+let followEnabled = true;
+let resumeFollowTimeout = null;
 
 function setStatus(text) {
   const el = document.getElementById('status');
@@ -308,7 +316,36 @@ function ensureMap(lng, lat) {
     center: [lng, lat],
     zoom: BASE_ZOOM,
     pitch: 60,
+    // The default attribution control sits bottom-left and spans wide
+    // enough to sit right under the floating radial menu button — moved to
+    // a compact "i" icon in a top corner instead, out of its way.
+    attributionControl: false,
   });
+  map.addControl(new maplibregl.AttributionControl({ compact: true }), 'top-left');
+  // maplibre-gl's compact:true option still renders the attribution fully
+  // expanded (not just a collapsed "i" icon) the first time it mounts on a
+  // map container 640px wide or less — i.e. on every phone — since it's
+  // meant to guarantee attribution is seen at least once on small maps. Its
+  // visual expanded/collapsed state is driven by the maplibregl-compact-show
+  // class (not the <details> element's own open attribute, which the same
+  // code toggles somewhat inversely for its own transition styling), and
+  // that class only gets added once the map's style has actually loaded
+  // (asynchronously, well after addControl() returns here) — so collapsing
+  // it immediately is a no-op. A MutationObserver reacts the moment the
+  // library adds it instead of guessing at timing, then disconnects so it
+  // doesn't fight the user's own subsequent taps on the icon.
+  const attribEl = document.querySelector('.maplibregl-ctrl-attrib');
+  if (attribEl) {
+    const collapseAttribution = () => {
+      if (!attribEl.classList.contains('maplibregl-compact-show')) return;
+      attribEl.setAttribute('open', '');
+      attribEl.classList.remove('maplibregl-compact-show');
+      attribObserver.disconnect();
+    };
+    const attribObserver = new MutationObserver(collapseAttribution);
+    attribObserver.observe(attribEl, { attributes: true, attributeFilter: ['class'] });
+    collapseAttribution();
+  }
 
   map.on('load', () => {
     post({ type: 'debug', text: 'map load event fired' });
@@ -317,6 +354,36 @@ function ensureMap(lng, lat) {
   map.on('error', (e) => {
     post({ type: 'debug', text: 'map error: ' + (e && e.error && e.error.message) });
   });
+
+  // e.originalEvent is only set for gestures the user actually performed
+  // (mouse/touch) — camera moves we trigger ourselves via easeTo() don't set
+  // it, so this only reacts to the user taking the wheel, not our own follow.
+  const pauseFollow = (e) => {
+    if (!e.originalEvent) return;
+    followEnabled = false;
+    if (resumeFollowTimeout) clearTimeout(resumeFollowTimeout);
+  };
+  const scheduleResumeFollow = (e) => {
+    if (!e.originalEvent) return;
+    if (resumeFollowTimeout) clearTimeout(resumeFollowTimeout);
+    resumeFollowTimeout = setTimeout(() => {
+      followEnabled = true;
+      // Snap back right away instead of waiting for the next GPS fix — if
+      // the character hasn't moved (or moved less than distanceInterval)
+      // since the drag, no new 'location' message may arrive for a while.
+      if (currentLngLat) {
+        map.easeTo({ center: currentLngLat, duration: FOLLOW_EASE_MS, easing: (t) => t });
+      }
+    }, FOLLOW_RESUME_DELAY_MS);
+  };
+  map.on('dragstart', pauseFollow);
+  map.on('zoomstart', pauseFollow);
+  map.on('rotatestart', pauseFollow);
+  map.on('pitchstart', pauseFollow);
+  map.on('dragend', scheduleResumeFollow);
+  map.on('zoomend', scheduleResumeFollow);
+  map.on('rotateend', scheduleResumeFollow);
+  map.on('pitchend', scheduleResumeFollow);
 }
 
 function handleLocation(msg) {
@@ -329,7 +396,12 @@ function handleLocation(msg) {
   if (typeof heading === 'number' && heading >= 0) {
     currentHeadingRad = Math.PI + (heading * Math.PI) / 180;
   }
-  if (map) map.triggerRepaint();
+  if (map) {
+    map.triggerRepaint();
+    if (followEnabled) {
+      map.easeTo({ center: [longitude, latitude], duration: FOLLOW_EASE_MS, easing: (t) => t });
+    }
+  }
 
   const moved = !lastFix || Math.hypot(latitude - lastFix.latitude, longitude - lastFix.longitude) > 3e-6;
   if (modelLoaded) setClip(moved ? 'walk' : 'idle');
