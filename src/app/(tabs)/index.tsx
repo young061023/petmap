@@ -72,6 +72,19 @@ export default function MapScreen() {
   useEffect(() => {
     let subscription: Location.LocationSubscription | undefined;
 
+    const applyPosition = (position: Location.LocationObject) => {
+      const raw = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+      const previous = smoothedLocationRef.current;
+      const smoothed = previous
+        ? {
+            latitude: previous.latitude + (raw.latitude - previous.latitude) * GPS_SMOOTHING_ALPHA,
+            longitude: previous.longitude + (raw.longitude - previous.longitude) * GPS_SMOOTHING_ALPHA,
+          }
+        : raw;
+      smoothedLocationRef.current = smoothed;
+      setLocation(smoothed, position.coords.heading);
+    };
+
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       setPermissionStatus(status);
@@ -81,24 +94,21 @@ export default function MapScreen() {
         return;
       }
 
+      // Render from the most recent cached fix immediately instead of waiting
+      // for a fresh high-accuracy GPS reading every time this screen mounts.
+      const lastKnownPosition = await Location.getLastKnownPositionAsync();
+      if (lastKnownPosition) applyPosition(lastKnownPosition);
+
       subscription = await Location.watchPositionAsync(
         {
-          accuracy: Location.Accuracy.BestForNavigation,
+          // `BestForNavigation` can take a long time to produce the first fix,
+          // especially indoors and in the simulator. High accuracy is enough
+          // for walking while allowing the map to appear much sooner.
+          accuracy: Location.Accuracy.High,
           timeInterval: 2000,
           distanceInterval: 2,
         },
-        (position) => {
-          const raw = { latitude: position.coords.latitude, longitude: position.coords.longitude };
-          const previous = smoothedLocationRef.current;
-          const smoothed = previous
-            ? {
-                latitude: previous.latitude + (raw.latitude - previous.latitude) * GPS_SMOOTHING_ALPHA,
-                longitude: previous.longitude + (raw.longitude - previous.longitude) * GPS_SMOOTHING_ALPHA,
-              }
-            : raw;
-          smoothedLocationRef.current = smoothed;
-          setLocation(smoothed, position.coords.heading);
-        },
+        applyPosition,
       );
     })();
 

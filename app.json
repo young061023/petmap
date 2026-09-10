@@ -32,11 +32,27 @@
     },
     "plugins": [
       "expo-router",
-      ["expo-splash-screen", { "backgroundColor": "#2F8F67", "image": "./assets/images/splash-icon.png", "imageWidth": 76 }],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#2F8F67",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 76
+        }
+      ],
       "@maplibre/maplibre-react-native",
-      ["expo-location", { "locationWhenInUsePermission": "댕로컬이 지도에서 현재 위치를 표시하기 위해 위치를 사용합니다." }],
-      "expo-asset"
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "댕로컬이 지도에서 현재 위치를 표시하기 위해 위치를 사용합니다."
+        }
+      ],
+      "expo-asset",
+      "expo-image"
     ],
-    "experiments": { "typedRoutes": true, "reactCompiler": true }
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
   }
 }
