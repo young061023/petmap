@@ -53,6 +53,9 @@ export const MAP_HTML = `<!DOCTYPE html>
   html, body, #map { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #ddd; }
   #status { position: absolute; top: 8px; left: 8px; z-index: 10; color: #fff; font: 12px sans-serif;
     background: rgba(0,0,0,0.55); padding: 4px 8px; border-radius: 4px; pointer-events: none; }
+  .spot-marker { font-size: 22px; line-height: 1; cursor: pointer; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); }
+  .spot-popup-title { font: 600 13px sans-serif; margin-bottom: 2px; }
+  .spot-popup-address, .spot-popup-tel { font: 12px sans-serif; color: #555; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -130,6 +133,8 @@ let workerReady = false;
 let pendingMapCenter = null;
 let followEnabled = true;
 let resumeFollowTimeout = null;
+let spotMarkers = [];
+let pendingSpots = null;
 
 function setStatus(text) {
   const el = document.getElementById('status');
@@ -350,6 +355,10 @@ function ensureMap(lng, lat) {
   map.on('load', () => {
     post({ type: 'debug', text: 'map load event fired' });
     map.addLayer(characterLayer);
+    if (pendingSpots) {
+      renderSpots(pendingSpots);
+      pendingSpots = null;
+    }
   });
   map.on('error', (e) => {
     post({ type: 'debug', text: 'map error: ' + (e && e.error && e.error.message) });
@@ -408,6 +417,43 @@ function handleLocation(msg) {
   lastFix = { latitude, longitude };
 }
 
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+// Pet-friendly tourism spots (한국관광공사 KorPetTourService2), sent over from
+// the RN side — rendered as simple DOM markers (unlike the character, these
+// don't need to share the map's own draw call, so the jitter concern that
+// ruled out DOM markers for the character doesn't apply to static POIs).
+function renderSpots(spots) {
+  if (!map || !map.loaded()) {
+    pendingSpots = spots;
+    return;
+  }
+  spotMarkers.forEach((marker) => marker.remove());
+  spotMarkers = [];
+
+  spots.forEach((spot) => {
+    const el = document.createElement('div');
+    el.className = 'spot-marker';
+    el.textContent = '🐾';
+
+    const popupHtml =
+      '<div class="spot-popup-title">' + escapeHtml(spot.title) + '</div>' +
+      (spot.address ? '<div class="spot-popup-address">' + escapeHtml(spot.address) + '</div>' : '') +
+      (spot.tel ? '<div class="spot-popup-tel">' + escapeHtml(spot.tel) + '</div>' : '');
+
+    const marker = new maplibregl.Marker({ element: el })
+      .setLngLat([spot.longitude, spot.latitude])
+      .setPopup(new maplibregl.Popup({ offset: 20 }).setHTML(popupHtml))
+      .addTo(map);
+    spotMarkers.push(marker);
+  });
+  post({ type: 'debug', text: 'rendered ' + spots.length + ' pet spots' });
+}
+
 function handleMessage(event) {
   let msg;
   try {
@@ -420,6 +466,7 @@ function handleMessage(event) {
   if (msg.type === 'model') loadModel(msg.dataUri);
   else if (msg.type === 'location') handleLocation(msg);
   else if (msg.type === 'workerCode') setWorkerCode(msg.code);
+  else if (msg.type === 'spots') renderSpots(msg.spots);
 }
 
 document.addEventListener('message', handleMessage);
