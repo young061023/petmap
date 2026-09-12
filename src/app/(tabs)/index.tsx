@@ -13,12 +13,18 @@ import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { fetchNearbyPetSpots, type PetSpot } from '@/services/petTourService';
 import { useMapStore } from '@/store/useMapStore';
 import { MAP_HTML } from '@/web-map/map-html';
 
 // Exponential moving average weight applied to each raw GPS fix — lower
 // values smooth out more jitter at the cost of a little lag.
 const GPS_SMOOTHING_ALPHA = 0.35;
+
+// Re-fetch nearby pet-friendly spots once the user has walked roughly this
+// far (in degrees) from where they were last fetched, so the public API
+// isn't hit on every GPS tick. ~0.015deg is ~1.5km at Korea's latitudes.
+const SPOT_REFETCH_DISTANCE_DEG = 0.015;
 
 const FOX_MODEL_MODULE = require('../../../assets/models/fox.glb');
 
@@ -78,9 +84,11 @@ export default function MapScreen() {
   const [modelDataUri, setModelDataUri] = useState<string | null>(null);
   const [mapHtmlFileUri, setMapHtmlFileUri] = useState<string | null>(null);
   const [workerCode, setWorkerCode] = useState<string | null>(null);
+  const [petSpots, setPetSpots] = useState<PetSpot[]>([]);
 
   const webviewRef = useRef<WebView>(null);
   const smoothedLocationRef = useRef<{ latitude: number; longitude: number } | null>(null);
+  const spotsFetchCenterRef = useRef<{ latitude: number; longitude: number } | null>(null);
 
   useEffect(() => {
     let subscription: Location.LocationSubscription | undefined;
@@ -228,6 +236,30 @@ export default function MapScreen() {
     console.warn('[rn] sending worker code, length', workerCode.length);
     webviewRef.current?.postMessage(JSON.stringify({ type: 'workerCode', code: workerCode }));
   }, [webviewReady, workerCode]);
+
+  // Fetch nearby pet-friendly tourism spots (한국관광공사 KorPetTourService2)
+  // around the user's current location, re-fetching only once they've moved
+  // far enough that the previous result set is stale.
+  useEffect(() => {
+    if (!location) return;
+    const lastCenter = spotsFetchCenterRef.current;
+    const moved =
+      !lastCenter ||
+      Math.hypot(location.latitude - lastCenter.latitude, location.longitude - lastCenter.longitude) >
+        SPOT_REFETCH_DISTANCE_DEG;
+    if (!moved) return;
+
+    spotsFetchCenterRef.current = location;
+    fetchNearbyPetSpots(location.latitude, location.longitude)
+      .then(setPetSpots)
+      .catch((error) => console.warn('[petTour] fetch failed', error));
+  }, [location]);
+
+  // Forward fetched spots into the page as they arrive/update.
+  useEffect(() => {
+    if (!webviewReady || petSpots.length === 0) return;
+    webviewRef.current?.postMessage(JSON.stringify({ type: 'spots', spots: petSpots }));
+  }, [webviewReady, petSpots]);
 
   // Forward every smoothed GPS fix into the page — this is the only way the
   // character's position changes; the WebView never touches
