@@ -189,7 +189,7 @@ export const AddRecordModal: React.FC<AddRecordModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(60, 47, 42, 0.32)',
+    backgroundColor: 'rgba(38, 53, 44, 0.32)',
     justifyContent: 'flex-end',
   },
   backdrop: StyleSheet.absoluteFill,
