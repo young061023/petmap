@@ -81,7 +81,7 @@ export function RadialTabBar({ state, descriptors, navigation }: RadialTabBarPro
               accessibilityRole="button"
               accessibilityLabel={typeof options.title === 'string' ? options.title : route.name}
             >
-              {options.tabBarIcon?.({ focused: isFocused, color: isFocused ? colors.surface : colors.primary, size: 22 })}
+              {options.tabBarIcon?.({ focused: isFocused, color: isFocused ? colors.onPrimary : colors.primary, size: 22 })}
             </Pressable>
           </Animated.View>
         );
@@ -96,12 +96,12 @@ export function RadialTabBar({ state, descriptors, navigation }: RadialTabBarPro
         <Animated.View
           style={[styles.centerIconLayer, { opacity: progress.interpolate({ inputRange: [0, 0.5], outputRange: [1, 0], extrapolate: 'clamp' }) }]}
         >
-          <PawPrint color={colors.surface} size={26} />
+          <PawPrint color={colors.onPrimary} size={26} />
         </Animated.View>
         <Animated.View
           style={[styles.centerIconLayer, { opacity: progress.interpolate({ inputRange: [0.5, 1], outputRange: [0, 1], extrapolate: 'clamp' }) }]}
         >
-          <X color={colors.surface} size={26} />
+          <X color={colors.onPrimary} size={26} />
         </Animated.View>
       </Pressable>
     </View>
@@ -121,11 +121,11 @@ const styles = StyleSheet.create({
     width: CENTER_SIZE,
     height: CENTER_SIZE,
     borderRadius: CENTER_SIZE / 2,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryFill,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
+    shadowColor: colors.text,
+    shadowOpacity: 0.10,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
     elevation: 6,
@@ -147,24 +147,24 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: colors.text,
     shadowOpacity: 0.15,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
     elevation: 4,
   },
   fanButtonActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryFill,
   },
   fanLabelWrap: {
     marginBottom: 4,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
-    backgroundColor: 'rgba(23,33,28,0.72)',
+    backgroundColor: colors.primaryWeak,
   },
   fanLabel: {
-    color: colors.surface,
+    color: colors.text,
     fontSize: 11,
     fontWeight: '600',
   },

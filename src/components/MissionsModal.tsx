@@ -61,7 +61,7 @@ export const MissionsModal: React.FC<MissionsModalProps> = ({
                 onPress={() => onToggleMission(item.id)}
               >
                 {item.completed ? (
-                  <CheckCircle2 size={22} color={theme.colors.primaryMintDark} fill={theme.colors.pastelMintSoft} />
+                  <CheckCircle2 size={22} color={theme.colors.sageStrong} fill={theme.colors.sageSoft} />
                 ) : (
                   <Circle size={22} color={theme.colors.textLight} />
                 )}
@@ -89,7 +89,7 @@ export const MissionsModal: React.FC<MissionsModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: 'rgba(60, 47, 42, 0.32)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
@@ -152,11 +152,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   missionTextCompleted: {
-    color: theme.colors.primaryMintDark,
+    color: theme.colors.sageStrong,
     textDecorationLine: 'line-through',
   },
   confirmBtn: {
-    backgroundColor: theme.colors.primaryMintDark,
+    backgroundColor: theme.colors.primary,
     paddingVertical: 12,
     borderRadius: theme.borderRadius.md,
     alignItems: 'center',
@@ -164,6 +164,6 @@ const styles = StyleSheet.create({
   confirmText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: theme.colors.onPrimary,
   },
 });

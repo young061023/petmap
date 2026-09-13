@@ -15,42 +15,42 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({
   isFirst,
   isLast,
 }) => {
-  // Category color & icon mapping using requested 5 pastel color palette
+  // Muted category colors keep the existing activity distinctions.
   const getCategoryTheme = (category: string) => {
     switch (category) {
       case '산책':
         return {
-          bg: '#EAFDF7', // Soft Mint
-          text: '#28A082',
-          dot: theme.colors.pastelMint, // #B2F9E7
+          bg: theme.colors.sageSoft,
+          text: theme.colors.sageStrong,
+          dot: theme.colors.pastelMint,
           icon: Dog,
         };
       case '간식':
         return {
-          bg: '#FFFDE8', // Soft Yellow tint
-          text: '#D48C00',
-          dot: theme.colors.pastelYellow, // #FFFABF
+          bg: theme.colors.sandSoft,
+          text: theme.colors.sandStrong,
+          dot: theme.colors.pastelYellow,
           icon: Utensils,
         };
       case '여행':
         return {
-          bg: '#FFF0FA', // Soft Pink tint
-          text: '#D85A93',
-          dot: theme.colors.pastelPinkDark, // #F4ADCF
+          bg: theme.colors.primarySoft,
+          text: theme.colors.primaryStrong,
+          dot: theme.colors.primary,
           icon: Camera,
         };
       case '병원':
         return {
-          bg: '#F2F3FF', // Soft Periwinkle tint
-          text: '#5B64D6',
-          dot: theme.colors.pastelLavender, // #BFC4FF
+          bg: theme.colors.blueSoft,
+          text: theme.colors.blueStrong,
+          dot: theme.colors.pastelLavender,
           icon: HeartPulse,
         };
       default:
         return {
-          bg: '#FFE7FF', // #FFE7FF
-          text: '#B04FA8',
-          dot: theme.colors.pastelSoftPink,
+          bg: theme.colors.primarySoft,
+          text: theme.colors.primaryStrong,
+          dot: theme.colors.sand,
           icon: Sparkles,
         };
     }
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(240, 236, 230, 0.9)',
+    borderColor: theme.colors.border,
     ...theme.shadows.soft,
   },
   activityImage: {

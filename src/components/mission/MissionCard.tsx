@@ -137,13 +137,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: missionColors.border,
     borderRadius: missionRadius.card,
-    backgroundColor: missionColors.canvas,
+    backgroundColor: missionColors.card,
   },
   cardContent: {
     padding: missionSpacing.lg,
   },
   pressedCard: {
-    backgroundColor: '#FAFBFC',
+    backgroundColor: missionColors.canvas,
   },
   topRow: {
     flexDirection: 'row',
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     minHeight: 24,
     justifyContent: 'center',
     paddingHorizontal: missionSpacing.sm,
-    borderRadius: 6,
+    borderRadius: missionRadius.control,
   },
   statusText: {
     fontSize: 12,
@@ -208,11 +208,11 @@ const styles = StyleSheet.create({
     gap: missionSpacing.xs,
     paddingHorizontal: missionSpacing.sm,
     paddingVertical: 5,
-    borderRadius: 6,
+    borderRadius: missionRadius.control,
     backgroundColor: missionColors.warningWeak,
   },
   rewardText: {
-    color: '#8A5A00',
+    color: missionColors.warning,
     fontSize: 13,
     fontWeight: '700',
   },
@@ -230,8 +230,8 @@ const styles = StyleSheet.create({
     marginHorizontal: missionSpacing.lg,
     marginBottom: missionSpacing.lg,
     paddingHorizontal: missionSpacing.lg,
-    borderRadius: 14,
-    backgroundColor: missionColors.primary,
+    borderRadius: missionRadius.button,
+    backgroundColor: missionColors.primaryFill,
   },
   completeButton: {
     minHeight: 48,
@@ -240,8 +240,8 @@ const styles = StyleSheet.create({
     marginHorizontal: missionSpacing.lg,
     marginBottom: missionSpacing.lg,
     paddingHorizontal: missionSpacing.lg,
-    borderRadius: 14,
-    backgroundColor: missionColors.primary,
+    borderRadius: missionRadius.button,
+    backgroundColor: missionColors.primaryFill,
   },
   claimButtonPressed: {
     backgroundColor: missionColors.primaryPressed,

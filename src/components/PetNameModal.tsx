@@ -49,7 +49,7 @@ export const PetNameModal: React.FC<PetNameModalProps> = ({
         <View style={styles.modalCard}>
           <View style={styles.header}>
             <View style={styles.headerTitleRow}>
-              <PawPrint size={18} color={theme.colors.pastelPinkDark} fill="#FFB7B2" />
+              <PawPrint size={18} color={theme.colors.pastelPinkDark} fill={theme.colors.primary} />
               <Text style={styles.headerTitle}>반려견 이름 설정</Text>
             </View>
             <Pressable onPress={onClose} hitSlop={10}>
@@ -88,7 +88,7 @@ export const PetNameModal: React.FC<PetNameModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: 'rgba(60, 47, 42, 0.32)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   saveButton: {
-    backgroundColor: theme.colors.pastelPinkDark,
+    backgroundColor: theme.colors.primary,
   },
   cancelText: {
     fontSize: 14,
@@ -158,6 +158,6 @@ const styles = StyleSheet.create({
   saveText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: theme.colors.onPrimary,
   },
 });

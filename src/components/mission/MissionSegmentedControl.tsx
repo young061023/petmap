@@ -65,15 +65,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: missionSpacing.md,
-    borderRadius: 8,
+    borderRadius: missionRadius.control,
   },
   compactSegment: {
     minHeight: 38,
   },
   selectedSegment: {
-    backgroundColor: missionColors.canvas,
+    backgroundColor: missionColors.primaryFill,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: missionColors.border,
+    borderColor: missionColors.primaryFill,
   },
   pressedSegment: {
     backgroundColor: missionColors.border,

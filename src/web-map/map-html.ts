@@ -50,12 +50,16 @@ export const MAP_HTML = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <link rel="stylesheet" href="./maplibre-gl.css" />
 <style>
-  html, body, #map { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #ddd; }
-  #status { position: absolute; top: 8px; left: 8px; z-index: 10; color: #fff; font: 12px sans-serif;
-    background: rgba(0,0,0,0.55); padding: 4px 8px; border-radius: 4px; pointer-events: none; }
-  .spot-marker { font-size: 22px; line-height: 1; cursor: pointer; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); }
-  .spot-popup-title { font: 600 13px sans-serif; margin-bottom: 2px; }
-  .spot-popup-address, .spot-popup-tel { font: 12px sans-serif; color: #555; margin-top: 2px; }
+  html, body, #map { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #FFF9F5; }
+  #status { position: absolute; top: 16px; left: 16px; z-index: 10; color: #78675F; font: 12px sans-serif;
+    background: #FFF9F5; padding: 10px 14px; border: 1px solid #EADDD4; border-radius: 18px; pointer-events: none; }
+  .spot-marker { display: grid; place-items: center; width: 40px; height: 40px; background: #F2B293; color: #3C2F2A;
+    border: 2px solid #A85335; border-radius: 50% 50% 50% 12px; font-size: 22px; line-height: 1; cursor: pointer;
+    box-shadow: 0 3px 8px rgba(60,47,42,0.14); }
+  .maplibregl-popup-content { background: #FFFFFF; border: 1px solid #EADDD4; border-radius: 20px; padding: 18px; box-shadow: 0 6px 20px rgba(60,47,42,0.1); }
+  .spot-popup-title { font: 700 15px sans-serif; color: #3C2F2A; margin-bottom: 6px; }
+  .spot-popup-address, .spot-popup-tel { font: 13px sans-serif; color: #78675F; line-height: 1.5; margin-top: 4px; }
+  .maplibregl-ctrl-group { border: 1px solid #EADDD4; border-radius: 18px; overflow: hidden; box-shadow: 0 3px 10px rgba(60,47,42,0.1); }
 </style>
 </head>
 <body>

@@ -8,7 +8,7 @@ interface CircularGraphProps {
   strokeWidth?: number;
   value: number; // e.g. 4
   targetValue?: number; // e.g. 5
-  color?: string; // pastel pink or mint
+  color?: string; // Chart accent color
   trackColor?: string;
   unit?: string;
 }
@@ -19,7 +19,7 @@ export const CircularGraph: React.FC<CircularGraphProps> = ({
   value,
   targetValue = 5,
   color = theme.colors.pastelPinkDark,
-  trackColor = '#FFEBE9',
+  trackColor = theme.colors.primarySoft,
   unit = '회',
 }) => {
   const center = size / 2;

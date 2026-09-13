@@ -1,20 +1,22 @@
 export const missionColors = {
-  primary: '#3182F6',
-  primaryPressed: '#2272EB',
-  primaryWeak: '#E8F3FF',
-  canvas: '#FFFFFF',
-  foreground: '#191F28',
-  body: '#4E5968',
-  muted: '#8B95A1',
-  surface: '#F2F4F6',
-  border: '#E5E8EB',
-  success: '#12B886',
-  successWeak: '#E6FCF5',
-  warning: '#F59F00',
-  warningWeak: '#FFF4D6',
-  coral: '#F06565',
-  coralWeak: '#FFF0F0',
-  onPrimary: '#FFFFFF',
+  primary: '#A85335',
+  primaryFill: '#F2B293',
+  primaryPressed: '#E8A280',
+  primaryWeak: '#FBECE3',
+  canvas: '#FFF9F5',
+  card: '#FFFFFF',
+  foreground: '#3C2F2A',
+  body: '#66554C',
+  muted: '#78675F',
+  surface: '#F5EDE7',
+  border: '#EADDD4',
+  success: '#526B50',
+  successWeak: '#E9F0E5',
+  warning: '#8B613A',
+  warningWeak: '#F7EBD9',
+  coral: '#9C4A45',
+  coralWeak: '#F8EAE6',
+  onPrimary: '#3C2F2A',
 } as const;
 
 export const missionSpacing = {
@@ -27,7 +29,7 @@ export const missionSpacing = {
 } as const;
 
 export const missionRadius = {
-  card: 8,
-  control: 10,
-  button: 16,
+  card: 20,
+  control: 999,
+  button: 999,
 } as const;

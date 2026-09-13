@@ -38,7 +38,7 @@ const categoryColors: Record<MissionCategory, { background: string; foreground: 
   place: { background: missionColors.warningWeak, foreground: missionColors.warning },
   training: { background: missionColors.successWeak, foreground: missionColors.success },
   bonding: { background: missionColors.coralWeak, foreground: missionColors.coral },
-  photo: { background: '#F3EDFF', foreground: '#7C4DFF' },
+  photo: { background: missionColors.surface, foreground: missionColors.body },
 };
 
 interface MissionSymbolProps {
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   categoryIcon: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
+    borderRadius: 16,
     flexShrink: 0,
   },
 });

@@ -138,7 +138,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
         accessibilityRole="button"
         accessibilityLabel="기록 추가"
       >
-        <Plus size={26} color="#FFFFFF" strokeWidth={2.8} />
+        <Plus size={26} color={theme.colors.onPrimary} strokeWidth={2.8} />
       </Pressable>
     </View>
   );
@@ -147,7 +147,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // Pure White as requested!
+    backgroundColor: '#FFFFFF',
     position: 'relative',
   },
   pullBanner: {
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(44, 48, 54, 0.9)',
+    backgroundColor: 'rgba(60, 47, 42, 0.92)',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: theme.borderRadius.full,
@@ -251,12 +251,12 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: theme.colors.pastelPinkDark, // #F4ADCF
+    backgroundColor: theme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#F4ADCF',
+    shadowColor: theme.colors.textMain,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.45,
+    shadowOpacity: 0.14,
     shadowRadius: 10,
     elevation: 6,
   },
