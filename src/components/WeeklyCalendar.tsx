@@ -140,7 +140,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 
   const year = selectedDate.getFullYear();
   const monthName = MONTH_NAMES[selectedDate.getMonth()];
-  const headerDateString = `${monthName} ${year}`;
+  const headerDateString = `${year}년 ${selectedDate.getMonth() + 1}월`;
 
   const isSameDay = (d1: Date | null, d2: Date) => {
     if (!d1) return false;
@@ -313,7 +313,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 8,
     backgroundColor: theme.colors.background,
     position: 'relative',
   },
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
   },
   englishDateText: {
     fontFamily: 'NanumSquareRound',
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '800',
     color: theme.colors.textMain,
     letterSpacing: 0.5,
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
   calendarCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: theme.borderRadius.lg,
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 8,
     borderWidth: 1,
     borderColor: theme.colors.border,

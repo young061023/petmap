@@ -66,7 +66,7 @@ export default function MissionScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: missionColors.canvas }, scrollContent: { paddingBottom: 40 },
+  safeArea: { flex: 1, backgroundColor: missionColors.canvas }, scrollContent: { paddingBottom: 100 },
   content: { width: '100%', maxWidth: 680, alignSelf: 'center', paddingHorizontal: missionSpacing.lg, paddingTop: missionSpacing.xl },
   sectionHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: missionSpacing.lg, marginTop: missionSpacing.xxl, marginBottom: missionSpacing.lg },
   sectionTitle: { color: missionColors.foreground, fontSize: 22, lineHeight: 30, fontWeight: '700' },

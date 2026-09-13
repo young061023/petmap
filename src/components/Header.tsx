@@ -1,4 +1,5 @@
 import React from 'react';
+import { ExplorerBrand } from './ExplorerBrand';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { PawPrint, Edit2 } from 'lucide-react-native';
 import { theme } from '../theme/theme';
@@ -10,6 +11,8 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ petName, onEditPetName }) => {
   return (
+    <>
+    <ExplorerBrand label="우리의 발자국" />
     <View style={styles.container}>
       <View style={styles.titleRow}>
         <Text style={styles.titleText}>여행 기록</Text>
@@ -34,13 +37,14 @@ export const Header: React.FC<HeaderProps> = ({ petName, onEditPetName }) => {
         <Edit2 size={13} color={theme.colors.textSub} style={styles.editIcon} />
       </Pressable>
     </View>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 8,
     paddingBottom: 12,
     backgroundColor: theme.colors.background,
   },
@@ -51,7 +55,7 @@ const styles = StyleSheet.create({
   },
   titleText: {
     fontFamily: 'NanumSquareRound',
-    fontSize: 26,
+    fontSize: 25,
     fontWeight: '800',
     color: theme.colors.textMain,
     marginRight: 8,
@@ -77,7 +81,7 @@ const styles = StyleSheet.create({
   },
   subtitleText: {
     fontFamily: 'NanumSquareRound',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     color: theme.colors.textSub,
   },

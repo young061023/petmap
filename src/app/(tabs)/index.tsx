@@ -1,3 +1,4 @@
+import { MapExplorer } from '@/components/MapExplorer';
 import * as Location from 'expo-location';
 import {
   cacheDirectory,
@@ -284,22 +285,22 @@ export default function MapScreen() {
 
   if (permissionStatus !== 'granted') {
     return (
-      <ThemedView style={styles.center}>
+      <MapExplorer spots={petSpots}><ThemedView style={styles.center}>
         <ThemedText>{errorMessage ?? '위치 권한을 요청하는 중...'}</ThemedText>
-      </ThemedView>
+      </ThemedView></MapExplorer>
     );
   }
 
   if (!location || !mapHtmlFileUri) {
     return (
-      <ThemedView style={styles.center}>
+      <MapExplorer spots={petSpots}><ThemedView style={styles.center}>
         <ActivityIndicator />
-      </ThemedView>
+      </ThemedView></MapExplorer>
     );
   }
 
   return (
-    <WebView
+    <MapExplorer spots={petSpots}><WebView
       ref={webviewRef}
       style={styles.map}
       source={webviewSource}
@@ -313,7 +314,7 @@ export default function MapScreen() {
       onError={(e) => console.warn('[webview] onError', e.nativeEvent)}
       onHttpError={(e) => console.warn('[webview] onHttpError', e.nativeEvent)}
       onRenderProcessGone={(e) => console.warn('[webview] onRenderProcessGone', e.nativeEvent)}
-    />
+    /></MapExplorer>
   );
 }
 

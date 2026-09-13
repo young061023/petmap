@@ -1,3 +1,4 @@
+import { Puppy } from '@/components/ExplorerBrand';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -19,9 +20,9 @@ export default function LoginScreen() {
     finally { setLoading(false); }
   };
   return <SafeAreaView style={styles.safe}><KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-    <View style={styles.brand}><Text style={styles.logo}>댕로컬</Text><Text style={styles.tagline}>반려동물과 함께 떠나는{`\n`}미션형 로컬 여행</Text></View>
+    <View style={styles.brand}><Puppy size={110} /><Text style={styles.logo}>팻맵</Text><Text style={styles.tagline}>반려동물과 함께 떠나는{`\n`}미션형 로컬 여행</Text></View>
     <View style={styles.form}><FormField label="이메일" value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" placeholder="name@example.com" /><FormField label="비밀번호" value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" placeholder="비밀번호 입력" />{error ? <Text accessibilityLiveRegion="polite" style={styles.error}>{error}</Text> : null}<PrimaryButton label="로그인" onPress={() => void submit()} loading={loading} /></View>
     <Text style={styles.footer}>처음 오셨나요? <Link href="/signup" style={styles.link}>회원가입</Link></Text>
   </ScrollView></KeyboardAvoidingView></SafeAreaView>;
 }
-const styles = StyleSheet.create({ safe: { flex: 1, backgroundColor: colors.canvas }, flex: { flex: 1 }, content: { flexGrow: 1, justifyContent: 'center', padding: spacing.xl, gap: 36 }, brand: { gap: spacing.md }, logo: { color: colors.primary, fontSize: 34, fontWeight: '800' }, tagline: { color: colors.text, fontSize: 24, lineHeight: 34, fontWeight: '700' }, form: { gap: spacing.lg }, error: { color: colors.danger, fontSize: 14 }, footer: { textAlign: 'center', color: colors.body }, link: { color: colors.primary, fontWeight: '700' } });
+const styles = StyleSheet.create({ safe: { flex: 1, backgroundColor: colors.canvas }, flex: { flex: 1 }, content: { width: '100%', maxWidth: 480, alignSelf: 'center', flexGrow: 1, justifyContent: 'center', padding: spacing.xl, gap: 36 }, brand: { gap: spacing.md }, logo: { color: colors.primary, fontSize: 34, fontWeight: '800' }, tagline: { color: colors.text, fontSize: 24, lineHeight: 34, fontWeight: '700' }, form: { gap: spacing.lg, backgroundColor: colors.surface, padding: 20, borderRadius: 24, borderWidth: 1, borderColor: colors.border }, error: { color: colors.danger, fontSize: 14 }, footer: { textAlign: 'center', color: colors.body }, link: { color: colors.primary, fontWeight: '700' } });

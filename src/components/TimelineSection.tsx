@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Plus, ChevronUp, ChevronDown, Calendar, Sparkles } from 'lucide-react-native';
 import { TimelineActivity } from '../types/record';
+import { ExplorerGuide } from './ExplorerBrand';
 import { TimelineItem } from './TimelineItem';
 import { theme } from '../theme/theme';
 
@@ -105,11 +106,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
 
         {activities.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyEmoji}>🐾</Text>
-            <Text style={styles.emptyTitle}>기록된 추억이 없어요</Text>
-            <Text style={styles.emptySub}>
-              하단 + 버튼을 눌러 {petName}과의 순간을 기록해보세요!
-            </Text>
+<ExplorerGuide title="첫 발자국을 남겨볼까요?" subtitle={`오른쪽 + 버튼으로 ${petName}과의 순간을 남겨요.`} />
           </View>
         ) : (
           activities.map((item, index) => (
@@ -172,6 +169,8 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
@@ -209,7 +208,8 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   pullHintBottom: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    paddingHorizontal: 20,
     paddingVertical: 14,
     gap: 2,
   },
@@ -221,9 +221,11 @@ const styles = StyleSheet.create({
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 40,
+    paddingVertical: 0,
     paddingHorizontal: 20,
   },
+  emptyAction: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 12, backgroundColor: theme.colors.primary, borderRadius: 24 },
+  emptyActionText: { color: theme.colors.onPrimary, fontWeight: '700', fontSize: 13 },
   emptyEmoji: {
     fontSize: 40,
     marginBottom: 10,
@@ -246,11 +248,11 @@ const styles = StyleSheet.create({
   // Bottom Center Pure Circle (+) Button
   floatingCircleBtn: {
     position: 'absolute',
-    bottom: 20,
-    alignSelf: 'center',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    bottom: 90,
+    right: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: theme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',

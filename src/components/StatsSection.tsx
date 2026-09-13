@@ -31,7 +31,7 @@ export const StatsSection: React.FC<StatsSectionProps> = ({
           <Text style={styles.statSubtext}>추억 스토리가 쌓여가는 중</Text>
         </View>
         <CircularGraph
-          size={56}
+          size={44}
           strokeWidth={5}
           value={recordCount}
           targetValue={5}
@@ -63,7 +63,7 @@ export const StatsSection: React.FC<StatsSectionProps> = ({
           </Text>
         </View>
         <CircularGraph
-          size={56}
+          size={44}
           strokeWidth={5}
           value={completedMissions}
           targetValue={totalMissions}
@@ -80,9 +80,11 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.primarySoft,
+    margin: 12,
+    borderRadius: 18,
   },
   statItem: {
     flex: 1,
@@ -96,7 +98,7 @@ const styles = StyleSheet.create({
     width: 1,
     height: 36,
     backgroundColor: theme.colors.border,
-    marginHorizontal: 12,
+    marginHorizontal: 6,
   },
   itemPressed: {
     opacity: 0.6,
@@ -113,13 +115,13 @@ const styles = StyleSheet.create({
   },
   statTitle: {
     fontFamily: 'NanumSquareRound',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: theme.colors.textMain,
   },
   statSubtext: {
     fontFamily: 'NanumSquareRound',
-    fontSize: 11,
+    fontSize: 10,
     color: theme.colors.textSub,
   },
 });
