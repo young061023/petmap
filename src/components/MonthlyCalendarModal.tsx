@@ -101,8 +101,8 @@ export const MonthlyCalendarModal: React.FC<MonthlyCalendarModalProps> = ({
                 key={w}
                 style={[
                   styles.weekdayText,
-                  idx === 0 && { color: '#E57373' }, // Sun
-                  idx === 6 && { color: '#64B5F6' }, // Sat
+                  idx === 0 && { color: theme.colors.primaryStrong }, // Sun
+                  idx === 6 && { color: theme.colors.blueStrong }, // Sat
                 ]}
               >
                 {w}
@@ -160,7 +160,7 @@ export const MonthlyCalendarModal: React.FC<MonthlyCalendarModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'rgba(60, 47, 42, 0.32)',
     justifyContent: 'flex-end',
   },
   backdrop: StyleSheet.absoluteFill,
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dayCircleSelected: {
-    backgroundColor: theme.colors.pastelPinkSoft,
+    backgroundColor: theme.colors.primary,
     borderWidth: 1,
     borderColor: theme.colors.pastelPink,
   },
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   },
   dayTextSelected: {
     fontWeight: '800',
-    color: theme.colors.pastelPinkDark,
+    color: theme.colors.onPrimary,
   },
   shortPointLine: {
     width: 12,

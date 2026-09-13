@@ -122,7 +122,7 @@ export const CombinedSheet: React.FC<CombinedSheetProps> = ({
 const styles = StyleSheet.create({
   sheetContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // Pure White as requested!
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: theme.borderRadius.xl,
     borderTopRightRadius: theme.borderRadius.xl,
     ...theme.shadows.soft,
@@ -136,20 +136,22 @@ const styles = StyleSheet.create({
     zIndex: 999,
     borderRadius: 0,
     paddingTop: 10,
-    backgroundColor: '#FFFFFF', // Pure White as requested!
+    backgroundColor: '#FFFFFF',
   },
   handleContainer: {
     alignItems: 'center',
     paddingTop: 10,
     paddingBottom: 4,
     paddingHorizontal: 20,
+    borderTopLeftRadius: theme.borderRadius.xl,
+    borderTopRightRadius: theme.borderRadius.xl,
     backgroundColor: '#FFFFFF',
   },
   dragPill: {
     width: 38,
     height: 4.5,
     borderRadius: 2.5,
-    backgroundColor: '#DCD6CC',
+    backgroundColor: theme.colors.border,
     marginBottom: 6,
   },
   handleRow: {
@@ -168,9 +170,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.pastelMint, // #B2F9E7
+    backgroundColor: theme.colors.primarySoft,
     borderWidth: 1,
-    borderColor: 'rgba(44, 165, 141, 0.25)',
+    borderColor: theme.colors.border,
   },
   toggleLabelRow: {
     flexDirection: 'row',
@@ -181,11 +183,11 @@ const styles = StyleSheet.create({
     fontFamily: 'NanumSquareRound',
     fontSize: 11,
     fontWeight: '800',
-    color: '#2C3036',
+    color: theme.colors.textMain,
   },
   sectionDivider: {
     height: 1,
-    backgroundColor: 'rgba(240, 236, 230, 0.7)',
+    backgroundColor: theme.colors.divider,
     marginHorizontal: 20,
     marginVertical: 4,
   },

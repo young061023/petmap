@@ -35,8 +35,8 @@ export const StatsSection: React.FC<StatsSectionProps> = ({
           strokeWidth={5}
           value={recordCount}
           targetValue={5}
-          color={theme.colors.pastelPinkDark} // #F4ADCF
-          trackColor="#FFE7FF" // #FFE7FF
+          color={theme.colors.pastelPinkDark}
+          trackColor={theme.colors.primarySoft}
           unit="회"
         />
       </View>
@@ -53,7 +53,7 @@ export const StatsSection: React.FC<StatsSectionProps> = ({
       >
         <View style={styles.statInfo}>
           <View style={styles.badgeRow}>
-            <CheckCircle2 size={13} color="#2CA58D" />
+            <CheckCircle2 size={13} color={theme.colors.sageStrong} />
             <Text style={styles.statTitle}>완료한 미션</Text>
           </View>
           <Text style={styles.statSubtext}>
@@ -67,8 +67,8 @@ export const StatsSection: React.FC<StatsSectionProps> = ({
           strokeWidth={5}
           value={completedMissions}
           targetValue={totalMissions}
-          color="#2CA58D"
-          trackColor="#EAFDF7"
+          color={theme.colors.sageStrong}
+          trackColor={theme.colors.sageSoft}
           unit="개"
         />
       </Pressable>
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF', // Pure White as requested!
+    backgroundColor: '#FFFFFF',
   },
   statItem: {
     flex: 1,

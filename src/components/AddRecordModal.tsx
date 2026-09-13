@@ -189,7 +189,7 @@ export const AddRecordModal: React.FC<AddRecordModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'rgba(60, 47, 42, 0.32)',
     justifyContent: 'flex-end',
   },
   backdrop: StyleSheet.absoluteFill,
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
   },
   categoryChipSelected: {
-    backgroundColor: theme.colors.pastelPinkSoft,
+    backgroundColor: theme.colors.primary,
     borderColor: theme.colors.pastelPinkDark,
   },
   categoryChipText: {
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textSub,
   },
   categoryChipTextSelected: {
-    color: theme.colors.pastelPinkDark,
+    color: theme.colors.onPrimary,
     fontWeight: '800',
   },
   input: {
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     minHeight: 70,
   },
   submitBtn: {
-    backgroundColor: theme.colors.pastelPinkDark,
+    backgroundColor: theme.colors.primary,
     paddingVertical: 14,
     borderRadius: theme.borderRadius.md,
     alignItems: 'center',
@@ -296,6 +296,6 @@ const styles = StyleSheet.create({
   submitText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: theme.colors.onPrimary,
   },
 });

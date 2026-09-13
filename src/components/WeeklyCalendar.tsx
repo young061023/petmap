@@ -174,14 +174,14 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         >
           {isExpanded ? (
             <>
-              <ChevronUp size={14} color="#2C3036" />
+              <ChevronUp size={14} color={theme.colors.textMain} />
               <Text style={styles.toggleBtnText}>주간 보기</Text>
             </>
           ) : (
             <>
-              <CalendarIcon size={14} color="#2C3036" />
+              <CalendarIcon size={14} color={theme.colors.textMain} />
               <Text style={styles.toggleBtnText}>월간 보기</Text>
-              <ChevronDown size={14} color="#2C3036" />
+              <ChevronDown size={14} color={theme.colors.textMain} />
             </>
           )}
         </Pressable>
@@ -221,7 +221,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                     {dayLabel}
                   </Text>
                   
-                  {/* Circle Indicator for Selected Date (#F4ADCF) */}
+                  {/* Circle Indicator for Selected Date */}
                   <View
                     style={[
                       styles.dayCircle,
@@ -238,7 +238,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                     </Text>
                   </View>
 
-                  {/* Point Line (#BFC4FF) */}
+                  {/* Selected date underline */}
                   {selected ? (
                     <View style={styles.pointLine} />
                   ) : (
@@ -257,8 +257,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                   key={w}
                   style={[
                     styles.monthWeekdayText,
-                    idx === 0 && { color: '#E57373' },
-                    idx === 6 && { color: '#64B5F6' },
+                    idx === 0 && { color: theme.colors.primaryStrong },
+                    idx === 6 && { color: theme.colors.blueStrong },
                   ]}
                 >
                   {w}
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: theme.colors.background, // #FFE7FF
+    backgroundColor: theme.colors.background,
     position: 'relative',
   },
   toastBanner: {
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(44, 48, 54, 0.88)',
+    backgroundColor: 'rgba(60, 47, 42, 0.92)',
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: theme.borderRadius.full,
@@ -353,13 +353,13 @@ const styles = StyleSheet.create({
   toggleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.pastelMint, // #B2F9E7
+    backgroundColor: theme.colors.primarySoft,
     paddingHorizontal: 13,
     paddingVertical: 7,
     borderRadius: theme.borderRadius.full,
     gap: 4,
     borderWidth: 1,
-    borderColor: 'rgba(44, 165, 141, 0.25)',
+    borderColor: theme.colors.border,
     ...theme.shadows.gentle,
   },
   btnPressed: {
@@ -369,15 +369,15 @@ const styles = StyleSheet.create({
     fontFamily: 'NanumSquareRound',
     fontSize: 12.5,
     fontWeight: '800',
-    color: '#2C3036',
+    color: theme.colors.textMain,
   },
   calendarCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: theme.borderRadius.lg,
     paddingVertical: 10,
     paddingHorizontal: 8,
-    borderWidth: 1.5,
-    borderColor: 'rgba(244, 173, 207, 0.5)',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     ...theme.shadows.gentle,
   },
   dragHintRow: {
@@ -407,10 +407,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sunLabel: {
-    color: '#E57373',
+    color: theme.colors.primaryStrong,
   },
   satLabel: {
-    color: '#64B5F6',
+    color: theme.colors.blueStrong,
   },
   weekdayLabelSelected: {
     color: theme.colors.pastelPinkDark,
@@ -425,10 +425,10 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   dayCircleSelected: {
-    backgroundColor: theme.colors.pastelPinkDark, // #F4ADCF
-    shadowColor: theme.colors.pastelPinkDark,
+    backgroundColor: theme.colors.primary,
+    shadowColor: theme.colors.textMain,
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 3,
   },
@@ -439,14 +439,14 @@ const styles = StyleSheet.create({
     color: theme.colors.textMain,
   },
   dayNumSelected: {
-    color: '#FFFFFF',
+    color: theme.colors.onPrimary,
     fontWeight: '800',
   },
   pointLine: {
     width: 14,
     height: 3.5,
     borderRadius: 2,
-    backgroundColor: theme.colors.pastelLavender, // #BFC4FF
+    backgroundColor: theme.colors.primaryStrong,
     marginTop: 2,
   },
   pointLinePlaceholder: {

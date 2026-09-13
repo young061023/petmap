@@ -53,8 +53,8 @@ export function MissionOverview({
       <MissionProgressBar
         value={completionRatio}
         accessibilityLabel={`오늘의 미션 ${totalCount}개 중 ${completedCount}개 달성`}
-        color={missionColors.onPrimary}
-        trackColor="rgba(255, 255, 255, 0.28)"
+        color={missionColors.primary}
+        trackColor={missionColors.card}
       />
     </View>
   );
@@ -66,7 +66,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: missionSpacing.xl,
     paddingTop: missionSpacing.lg,
     paddingBottom: missionSpacing.xxl,
-    backgroundColor: missionColors.primary,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    backgroundColor: missionColors.primaryWeak,
   },
   title: {
     color: missionColors.onPrimary,
@@ -76,7 +78,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginTop: missionSpacing.xs,
-    color: 'rgba(255, 255, 255, 0.82)',
+    color: missionColors.body,
     fontSize: 15,
     lineHeight: 22,
   },
@@ -94,7 +96,7 @@ const styles = StyleSheet.create({
     gap: missionSpacing.sm,
   },
   metricLabel: {
-    color: 'rgba(255, 255, 255, 0.75)',
+    color: missionColors.body,
     fontSize: 13,
     fontWeight: '500',
   },
@@ -108,7 +110,7 @@ const styles = StyleSheet.create({
   divider: {
     width: StyleSheet.hairlineWidth,
     marginHorizontal: missionSpacing.lg,
-    backgroundColor: 'rgba(255, 255, 255, 0.32)',
+    backgroundColor: missionColors.primaryPressed,
   },
   progressHeader: {
     flexDirection: 'row',
@@ -117,7 +119,7 @@ const styles = StyleSheet.create({
     marginBottom: missionSpacing.sm,
   },
   progressLabel: {
-    color: 'rgba(255, 255, 255, 0.82)',
+    color: missionColors.body,
     fontSize: 13,
     fontWeight: '500',
   },
