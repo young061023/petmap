@@ -18,7 +18,7 @@ export default function TabLayout() {
   }
 
   return (
-    <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <RadialTabBar {...props} />}>
+    <View style={styles.appFrame}><Tabs screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.canvas } }} tabBar={(props) => <RadialTabBar {...props} />}>
       <Tabs.Screen
         name="index"
         options={{
@@ -47,10 +47,11 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
         }}
       />
-    </Tabs>
+    </Tabs></View>
   );
 }
 
 const styles = StyleSheet.create({
+  appFrame: { flex: 1, width: '100%', maxWidth: 480, alignSelf: 'center', backgroundColor: colors.canvas },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

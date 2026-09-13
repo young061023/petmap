@@ -1,3 +1,4 @@
+import { ExplorerBrand, ExplorerGuide } from '@/components/ExplorerBrand';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { MissionProgressBar } from '@/components/mission/MissionProgressBar';
@@ -20,9 +21,12 @@ export function MissionOverview({
   const completionRatio = totalCount > 0 ? completedCount / totalCount : 0;
 
   return (
+    <>
+    <ExplorerBrand label="오늘의 탐험" />
     <View style={styles.container}>
       <Text style={styles.title}>미션</Text>
       <Text style={styles.subtitle}>반려동물과 함께 오늘도 한 걸음</Text>
+      <ExplorerGuide title="다음 발자국을 남겨요" subtitle="작은 미션 하나로 오늘의 여행을 시작해요." />
 
       <View style={styles.metrics}>
         <View style={styles.metric}>
@@ -57,18 +61,20 @@ export function MissionOverview({
         trackColor={missionColors.card}
       />
     </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
+    marginHorizontal: 20,
+    borderRadius: 24,
     paddingHorizontal: missionSpacing.xl,
     paddingTop: missionSpacing.lg,
     paddingBottom: missionSpacing.xxl,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    backgroundColor: missionColors.primaryWeak,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    backgroundColor: missionColors.card,
   },
   title: {
     color: missionColors.onPrimary,
