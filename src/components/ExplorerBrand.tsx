@@ -3,7 +3,7 @@ import { PawPrint } from 'lucide-react-native';
 import { colors } from '@/constants/theme';
 
 export function Puppy({ size = 64 }: { size?: number }) {
-  return <Image source={require('../../assets/design/puppy-apricot.png')} style={{ width: size, height: size }} resizeMode="contain" accessible={false} />;
+  return <Image source={require('../../assets/design/puppy-sage.png')} style={{ width: size, height: size }} resizeMode="contain" accessible={false} />;
 }
 
 export function ExplorerBrand({ label = '반려견과 로컬 여행' }: { label?: string }) {

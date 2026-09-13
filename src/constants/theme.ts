@@ -1,18 +1,18 @@
 import { Platform } from 'react-native';
 
 export const colors = {
-  primary: '#A85335',
-  primaryFill: '#F2B293',
-  onPrimary: '#3C2F2A',
-  primaryPressed: '#E7A17F',
-  primaryWeak: '#FBECE3',
-  accent: '#A85335',
-  canvas: '#FFF9F5',
+  primary: '#456B54',
+  primaryFill: '#769883',
+  onPrimary: '#14231A',
+  primaryPressed: '#698C76',
+  primaryWeak: '#EDF3EF',
+  accent: '#456B54',
+  canvas: '#FAFAF6',
   surface: '#FFFFFF',
-  text: '#3C2F2A',
-  body: '#78675F',
-  muted: '#78675F',
-  border: '#EADDD4',
+  text: '#26352C',
+  body: '#68736C',
+  muted: '#68736C',
+  border: '#DFE6DF',
   danger: '#D92D20',
 } as const;
 
