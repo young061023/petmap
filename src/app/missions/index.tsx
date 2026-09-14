@@ -45,13 +45,6 @@ export default function MissionScreen() {
         <MissionOverview points={points} streakDays={streakDays} completedCount={completedDailyCount} totalCount={dailyMissions.length} />
         <View style={styles.content}>
           <MissionSegmentedControl accessibilityLabel="미션 기간" value={period} options={periodOptions} onChange={setPeriod} />
-          <View style={styles.sectionHeader}>
-            <View>
-              <Text style={styles.sectionTitle}>{period === 'daily' ? '오늘의 미션' : '주간 미션'}</Text>
-              <Text style={styles.sectionSubtitle}>{period === 'daily' ? '매일 자정에 새로운 미션으로 바뀌어요.' : '매주 월요일에 새로운 미션이 시작돼요.'}</Text>
-            </View>
-            <Text style={styles.missionCount}>{visibleMissions.length}개</Text>
-          </View>
           <MissionSegmentedControl accessibilityLabel="미션 상태" value={filter} options={filterOptions} onChange={setFilter} compact />
           {errorMessage ? <Text style={styles.errorMessage}>{errorMessage}</Text> : null}
           {isLoading ? (
@@ -66,7 +59,7 @@ export default function MissionScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: missionColors.canvas }, scrollContent: { paddingBottom: 100 },
+  safeArea: { flex: 1, backgroundColor: missionColors.canvas }, scrollContent: { paddingBottom: 24 },
   content: { width: '100%', maxWidth: 680, alignSelf: 'center', paddingHorizontal: missionSpacing.lg, paddingTop: missionSpacing.xl },
   sectionHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: missionSpacing.lg, marginTop: missionSpacing.xxl, marginBottom: missionSpacing.lg },
   sectionTitle: { color: missionColors.foreground, fontSize: 22, lineHeight: 30, fontWeight: '700' },

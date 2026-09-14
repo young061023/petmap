@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Plus } from 'lucide-react-native';
+import { colors } from '@/constants/theme';
+import { TravelRecordList } from '@/components/TravelRecordList';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AddRecordModal } from '@/components/AddRecordModal';
-import { CombinedSheet } from '@/components/CombinedSheet';
-import { Header } from '@/components/Header';
 import { MissionsModal } from '@/components/MissionsModal';
 import { PetNameModal } from '@/components/PetNameModal';
 import { WeeklyCalendar } from '@/components/WeeklyCalendar';
@@ -58,12 +59,6 @@ export default function RecordsScreen() {
     await updatePetName(name);
   };
 
-  const handleChangeDateByDay = (offset: number) => {
-    const nextDate = new Date(selectedDate);
-    nextDate.setDate(nextDate.getDate() + offset);
-    setSelectedDate(nextDate);
-  };
-
   const handleToggleMission = async (missionId: string) => {
     const mission = missions.find((item) => item.id === missionId);
     if (mission) await setCompleted(missionId, !mission.completed);
@@ -83,18 +78,13 @@ export default function RecordsScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <View style={styles.container}>
-        <Header petName={petName} onEditPetName={() => setPetModalVisible(true)} />
-        <WeeklyCalendar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
-        <CombinedSheet
-          recordCount={activities.length}
-          missions={missions}
-          onOpenMissions={() => setMissionsModalVisible(true)}
-          activities={activities}
-          selectedDate={selectedDate}
-          onChangeDateByDay={handleChangeDateByDay}
-          onOpenAddModal={() => setAddRecordModalVisible(true)}
-          petName={petName}
-        />
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.heading}><Pressable accessibilityRole="button" accessibilityLabel="반려견 이름 변경" onPress={() => setPetModalVisible(true)}><Text style={styles.title}>여행 기록</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="기록 추가" style={styles.add} onPress={() => setAddRecordModalVisible(true)}><Plus size={17} color={colors.primary} /><Text style={styles.addText}>기록</Text></Pressable></View>
+          <WeeklyCalendar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+          <TravelRecordList activities={activities} />
+          <Pressable accessibilityRole="button" style={styles.recordButton} onPress={() => setAddRecordModalVisible(true)}><Text style={styles.recordButtonText}>추억 기록하기</Text></Pressable>
+          <Pressable accessibilityRole="button" style={styles.missionLink} onPress={() => setMissionsModalVisible(true)}><Text style={styles.addText}>오늘의 미션 {missions.filter(item => item.completed).length} / {missions.length} 완료 · 확인하기</Text></Pressable>
+        </ScrollView>
         <PetNameModal
           visible={petModalVisible}
           currentName={petName}
@@ -120,4 +110,12 @@ export default function RecordsScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: theme.colors.background },
   container: { flex: 1, backgroundColor: theme.colors.background },
+  content: { paddingTop: 25, paddingBottom: 20 },
+  heading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 14 },
+  title: { fontSize: 30, fontWeight: '800', color: colors.text },
+  add: { flexDirection: 'row', alignItems: 'center', gap: 4, padding: 12, borderRadius: 16, backgroundColor: colors.primaryWeak },
+  addText: { fontSize: 13, color: colors.primary, fontWeight: '600' },
+  recordButton: { marginHorizontal: 20, marginTop: 18, minHeight: 48, justifyContent: 'center', alignItems: 'center', borderRadius: 15, backgroundColor: colors.primaryFill },
+  recordButtonText: { color: colors.onPrimary, fontSize: 15, fontWeight: '700' },
+  missionLink: { padding: 15, alignItems: 'center' },
 });

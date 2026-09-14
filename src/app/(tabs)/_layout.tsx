@@ -2,7 +2,7 @@ import { Redirect, Tabs } from 'expo-router';
 import { ClipboardList, Map, Target, User } from 'lucide-react-native';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { RadialTabBar } from '@/components/RadialTabBar';
+import { TravelTabBar } from '@/components/TravelTabBar';
 import { colors } from '@/constants/theme';
 import { useAuth } from '@/features/auth/AuthProvider';
 
@@ -18,7 +18,7 @@ export default function TabLayout() {
   }
 
   return (
-    <View style={styles.appFrame}><Tabs screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.canvas } }} tabBar={(props) => <RadialTabBar {...props} />}>
+    <View style={styles.appFrame}><Tabs screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.canvas } }} tabBar={(props) => <TravelTabBar {...props} />}>
       <Tabs.Screen
         name="index"
         options={{
