@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,7 +13,15 @@ export default function AchievementsScreen() {
   const [filter, setFilter] = useState<AchievementCategory>('exploration');
 
   useEffect(() => { void refresh(); }, [refresh]);
-  const visible = achievements.filter((achievement) => achievement.category === filter);
+  const visible = useMemo(() => achievements
+    .filter((achievement) => achievement.category === filter)
+    .sort((left, right) => {
+      if (left.unlocked !== right.unlocked) return left.unlocked ? -1 : 1;
+      if (left.unlocked && right.unlocked) {
+        return new Date(right.unlockedAt ?? 0).getTime() - new Date(left.unlockedAt ?? 0).getTime();
+      }
+      return 0;
+    }), [achievements, filter]);
 
   return (
     <SafeAreaView style={styles.safe}>

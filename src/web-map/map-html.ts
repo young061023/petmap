@@ -478,6 +478,16 @@ function focusSpot(msg) {
   if (popup) popup.addTo(map);
 }
 
+function recenterOnLocation(msg) {
+  if (!map) return;
+  followEnabled = true;
+  searchAreaButton.classList.remove('visible');
+  const longitude = typeof msg.longitude === 'number' ? msg.longitude : currentLngLat && currentLngLat[0];
+  const latitude = typeof msg.latitude === 'number' ? msg.latitude : currentLngLat && currentLngLat[1];
+  if (typeof longitude !== 'number' || typeof latitude !== 'number') return;
+  map.easeTo({ center: [longitude, latitude], zoom: Math.max(map.getZoom(), BASE_ZOOM), duration: 650, essential: true });
+}
+
 function handleMessage(event) {
   let msg;
   try {
@@ -492,6 +502,7 @@ function handleMessage(event) {
   else if (msg.type === 'workerCode') setWorkerCode(msg.code);
   else if (msg.type === 'spots') renderSpots(msg.spots);
   else if (msg.type === 'focusSpot') focusSpot(msg);
+  else if (msg.type === 'recenter') recenterOnLocation(msg);
   else if (msg.type === 'searchComplete') {
     searchAreaButton.disabled = false;
     if (msg.success) searchAreaButton.classList.remove('visible');

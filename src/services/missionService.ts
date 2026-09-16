@@ -27,7 +27,7 @@ const categoryOrder: readonly MissionCategory[] = [
   'photo',
 ];
 
-const dailyMissionPool: readonly MissionTemplate[] = [
+const dailyBaseMissionPool: readonly MissionTemplate[] = [
   {
     key: 'pet-route-captain',
     title: '오늘은 네가 길잡이',
@@ -234,7 +234,7 @@ const dailyMissionPool: readonly MissionTemplate[] = [
   },
 ];
 
-const weeklyMissionPool: readonly MissionTemplate[] = [
+const weeklyBaseMissionPool: readonly MissionTemplate[] = [
   {
     key: 'three-time-zones',
     title: '세 시간대 산책 컬렉션',
@@ -370,6 +370,95 @@ const weeklyMissionPool: readonly MissionTemplate[] = [
   },
 ];
 
+const mission = (key: string, title: string, description: string, category: MissionCategory, target: number, unit: string, rewardPoints: number): MissionTemplate => ({
+  key, title, description, category, target, unit, rewardPoints,
+  instructions: [`${description}`, `목표 ${target}${unit}을 달성한 뒤 완료를 기록해 주세요.`],
+});
+
+const dailyAdditionalMissions: readonly MissionTemplate[] = [
+  mission('open-petmap', '오늘 댕로컬 접속하기', '댕로컬에 접속해 오늘의 여행을 시작해요.', 'bonding', 1, '회', 30),
+  mission('open-map-once', '지도 화면 열어보기', '지도를 열고 주변을 천천히 둘러봐요.', 'place', 1, '회', 30),
+  mission('check-nearby', '현재 위치 주변 확인하기', '현재 위치 주변의 반려동물 동반 장소를 확인해요.', 'place', 1, '회', 40),
+  mission('view-place-detail', '장소 상세정보 확인하기', '관심 있는 장소의 상세정보를 읽어봐요.', 'place', 1, '곳', 40),
+  mission('check-pet-cafe', '반려동물 동반 카페 찾기', '지도에서 함께 갈 수 있는 카페를 확인해요.', 'place', 1, '곳', 50),
+  mission('check-walk-place', '산책 장소 찾아보기', '오늘 가고 싶은 산책 장소를 한 곳 찾아봐요.', 'walk', 1, '곳', 50),
+  mission('check-restaurant', '동반 음식점 찾아보기', '반려동물과 갈 수 있는 음식점을 확인해요.', 'place', 1, '곳', 50),
+  mission('check-attraction', '동반 관광지 찾아보기', '함께 방문할 관광지를 지도에서 확인해요.', 'place', 1, '곳', 50),
+  mission('check-lodging', '동반 숙소 찾아보기', '다음 여행을 위한 동반 숙소를 찾아봐요.', 'place', 1, '곳', 50),
+  mission('tap-map-marker', '지도 마커 눌러보기', '지도 위 발바닥 마커를 눌러 장소를 확인해요.', 'place', 1, '개', 40),
+  mission('search-place-once', '장소 검색 한 번 하기', '궁금한 장소를 검색창에서 찾아봐요.', 'place', 1, '회', 40),
+  mission('pick-favorite-place', '마음에 드는 장소 고르기', '오늘 가고 싶은 장소를 한 곳 정해요.', 'bonding', 1, '곳', 40),
+  mission('check-weather-plan', '날씨에 맞는 산책 계획', '오늘 날씨를 확인하고 안전한 산책 계획을 세워요.', 'walk', 1, '회', 40),
+  mission('browse-three-places', '새로운 장소 3곳 둘러보기', '지도에서 처음 보는 장소 세 곳을 확인해요.', 'place', 3, '곳', 70),
+  mission('check-recommendation', '추천 장소 확인하기', '주변 추천 장소 중 한 곳을 자세히 봐요.', 'place', 1, '곳', 50),
+  mission('walk-fifteen', '15분 동네 산책', '반려동물과 가볍게 15분 동안 걸어요.', 'walk', 15, '분', 70),
+  mission('walk-twenty', '20분 느긋한 산책', '서두르지 않고 20분 동안 함께 걸어요.', 'walk', 20, '분', 80),
+  mission('new-alley', '새 골목 한 곳 탐험', '평소 지나지 않던 안전한 골목을 걸어봐요.', 'walk', 1, '곳', 60),
+  mission('park-lap', '공원 한 바퀴 돌기', '가까운 공원에서 한 바퀴 산책해요.', 'walk', 1, '바퀴', 70),
+  mission('tree-shade-break', '나무 그늘에서 쉬기', '산책 중 그늘에서 잠시 함께 쉬어요.', 'walk', 1, '회', 50),
+  mission('water-break', '산책 중 물 마시기', '안전한 곳에서 반려동물에게 물을 챙겨줘요.', 'bonding', 1, '회', 40),
+  mission('sniff-three', '냄새 포인트 3곳 찾기', '충분히 냄새를 맡을 수 있는 시간을 줘요.', 'bonding', 3, '곳', 60),
+  mission('praise-five', '다섯 번 칭찬하기', '좋은 행동을 발견할 때마다 따뜻하게 칭찬해요.', 'bonding', 5, '회', 50),
+  mission('eye-contact-three', '눈맞춤 3번 하기', '이름을 부르고 편안하게 눈을 맞춰요.', 'training', 3, '회', 50),
+  mission('sit-three', '앉아 기다려 3번', '안전한 장소에서 짧게 기다리는 연습을 해요.', 'training', 3, '회', 60),
+  mission('crosswalk-stop', '횡단보도 앞 멈추기', '횡단보도 앞에서 차분히 멈추는 연습을 해요.', 'training', 2, '회', 60),
+  mission('name-response', '이름 반응 연습', '이름을 부르면 바라보는 연습을 해요.', 'training', 5, '회', 60),
+  mission('slow-walk-five', '천천히 걷기 5분', '반려동물의 속도에 맞춰 느리게 걸어요.', 'walk', 5, '분', 50),
+  mission('grass-step', '잔디길 걸어보기', '발에 안전한 잔디 구간을 찾아 걸어요.', 'place', 1, '곳', 50),
+  mission('quiet-rest', '조용한 쉼터 발견', '차 소리가 적은 편안한 쉼터를 찾아요.', 'place', 1, '곳', 60),
+  mission('sunset-photo', '노을과 함께 한 장', '저녁 산책의 빛을 사진으로 남겨요.', 'photo', 1, '장', 60),
+  mission('paw-photo', '오늘의 발 사진', '귀여운 발이나 발자국을 사진으로 남겨요.', 'photo', 1, '장', 50),
+  mission('smile-photo', '웃는 얼굴 한 장', '즐거운 표정을 사진으로 기록해요.', 'photo', 1, '장', 60),
+  mission('favorite-object-photo', '좋아하는 물건과 사진', '좋아하는 장난감이나 물건과 함께 찍어요.', 'photo', 1, '장', 50),
+  mission('record-memory', '오늘의 추억 기록', '오늘 함께한 순간을 여행 기록에 남겨요.', 'photo', 1, '개', 50),
+  mission('write-three-lines', '세 줄 산책 일기', '산책에서 느낀 점을 세 줄로 기록해요.', 'bonding', 3, '줄', 50),
+  mission('new-sound', '새로운 소리 관찰', '산책길에서 들린 새로운 소리를 함께 관찰해요.', 'bonding', 1, '개', 40),
+  mission('calm-minute', '1분 차분히 머물기', '조용한 장소에서 함께 1분간 머물러요.', 'training', 1, '분', 40),
+  mission('turn-practice', '방향 전환 연습', '안전한 길에서 좌우 방향 전환을 연습해요.', 'training', 4, '회', 60),
+  mission('different-surface-two', '바닥 촉감 2종', '서로 다른 안전한 바닥 두 종류를 걸어봐요.', 'place', 2, '종류', 60),
+  mission('bench-break', '벤치에서 잠깐 쉬기', '산책 중 벤치 근처에서 휴식해요.', 'walk', 1, '회', 40),
+  mission('greeting-manners', '차분한 인사 연습', '다른 사람이나 반려견을 볼 때 차분히 지나가요.', 'training', 2, '회', 60),
+  mission('toy-play-ten', '장난감 놀이 10분', '좋아하는 장난감으로 함께 놀아줘요.', 'bonding', 10, '분', 60),
+  mission('brush-five', '빗질 5분 하기', '편안하게 빗질하며 몸 상태를 살펴요.', 'bonding', 5, '분', 50),
+  mission('safe-route-save', '안전한 산책길 정하기', '차량 통행이 적은 산책길을 하나 골라요.', 'place', 1, '개', 50),
+];
+
+const weeklyAdditionalMissions: readonly MissionTemplate[] = [
+  mission('visit-pet-cafe-weekly', '동반 카페 1곳 방문', '이번 주 반려동물 동반 카페를 방문해요.', 'place', 1, '곳', 180),
+  mission('visit-walk-place-weekly', '산책 장소 1곳 방문', '이번 주 새로운 산책 장소를 방문해요.', 'walk', 1, '곳', 170),
+  mission('visit-park-weekly', '동반 공원 1곳 방문', '반려동물과 함께 공원을 방문해요.', 'place', 1, '곳', 180),
+  mission('visit-attraction-weekly', '동반 관광지 1곳 방문', '함께 즐길 수 있는 관광지를 방문해요.', 'place', 1, '곳', 200),
+  mission('visit-restaurant-weekly', '동반 음식점 1곳 방문', '반려동물 동반 음식점을 방문해요.', 'place', 1, '곳', 200),
+  mission('visit-local-shop', '지역 상점 1곳 방문', '동네의 작은 상점을 한 곳 발견해요.', 'place', 1, '곳', 180),
+  mission('visit-coast-walk', '해변 또는 해안 산책', '안전한 해변이나 해안 산책로를 방문해요.', 'walk', 1, '곳', 220),
+  mission('visit-first-place', '처음 가보는 장소 방문', '한 번도 방문하지 않은 장소를 찾아가요.', 'place', 1, '곳', 200),
+  mission('visit-recommended-place', '추천 장소 1곳 방문', '앱의 추천 장소 중 한 곳을 방문해요.', 'place', 1, '곳', 190),
+  mission('visit-nearby-place', '현재 위치 주변 장소 방문', '가까운 동반 장소 한 곳을 방문해요.', 'place', 1, '곳', 170),
+  mission('visit-two-places', '서로 다른 장소 2곳 방문', '이번 주 두 곳에서 새로운 추억을 만들어요.', 'place', 2, '곳', 240),
+  mission('visit-two-types', '서로 다른 종류 2곳 방문', '서로 다른 유형의 장소 두 곳을 방문해요.', 'place', 2, '종류', 240),
+  mission('walk-and-cafe', '산책 장소와 카페 방문', '산책 후 동반 카페까지 이어서 방문해요.', 'place', 2, '곳', 260),
+  mission('attraction-and-shop', '관광지와 지역 상점 방문', '관광지와 지역 상점을 각각 한 곳 방문해요.', 'place', 2, '곳', 260),
+  mission('three-places-one-area', '한 지역에서 3곳 방문', '같은 지역의 서로 다른 장소 세 곳을 방문해요.', 'place', 3, '곳', 300),
+  mission('walk-three-days', '주 3일 산책', '서로 다른 날에 세 번 산책해요.', 'walk', 3, '일', 220),
+  mission('walk-five-days', '주 5일 산책', '이번 주 다섯 날을 함께 걸어요.', 'walk', 5, '일', 300),
+  mission('total-sixty-minutes', '주간 산책 60분', '이번 주 누적 60분을 산책해요.', 'walk', 60, '분', 260),
+  mission('three-parks', '공원 3곳 탐험', '서로 다른 공원 세 곳을 찾아가요.', 'place', 3, '곳', 300),
+  mission('two-new-routes', '새 산책길 2개', '처음 걷는 산책 경로 두 개를 만들어요.', 'walk', 2, '개', 260),
+  mission('training-four-days', '훈련 4일 이어가기', '짧은 기본 훈련을 서로 다른 날 네 번 해요.', 'training', 4, '일', 250),
+  mission('eye-contact-twenty', '눈맞춤 20회', '일주일 동안 눈맞춤을 스무 번 연습해요.', 'training', 20, '회', 240),
+  mission('calm-stop-ten', '차분한 멈춤 10회', '산책 중 안전한 멈춤을 열 번 연습해요.', 'training', 10, '회', 250),
+  mission('bonding-five-days', '교감 시간 5일', '서로 다른 날에 교감 놀이를 진행해요.', 'bonding', 5, '일', 260),
+  mission('five-memories', '추억 기록 5개', '이번 주의 소중한 순간을 다섯 개 남겨요.', 'photo', 5, '개', 250),
+  mission('three-photos', '사진 3장 남기기', '서로 다른 날의 사진 세 장을 기록해요.', 'photo', 3, '장', 220),
+  mission('morning-evening', '아침과 저녁 산책', '아침 산책과 저녁 산책을 각각 경험해요.', 'walk', 2, '시간대', 220),
+  mission('weather-plan-three', '날씨 맞춤 계획 3회', '날씨에 맞춰 세 번 안전한 활동을 계획해요.', 'bonding', 3, '회', 210),
+  mission('weekly-kindness', '칭찬 30회', '일주일 동안 좋은 행동을 서른 번 칭찬해요.', 'bonding', 30, '회', 240),
+  mission('weekly-textures', '바닥 촉감 5종', '이번 주 안전한 바닥 촉감 다섯 가지를 경험해요.', 'place', 5, '종류', 270),
+];
+
+const dailyMissionPool: readonly MissionTemplate[] = [...dailyBaseMissionPool, ...dailyAdditionalMissions];
+const weeklyMissionPool: readonly MissionTemplate[] = [...weeklyBaseMissionPool, ...weeklyAdditionalMissions];
+
 function wait(milliseconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
@@ -405,16 +494,21 @@ function selectTemplates(
   count: number,
   rotationKey: string,
 ): MissionTemplate[] {
-  const categoryOffset = hashString(rotationKey) % categoryOrder.length;
-  const rotatedCategories = categoryOrder.map(
-    (_, index) => categoryOrder[(index + categoryOffset) % categoryOrder.length],
-  );
+  const shuffled = [...pool].sort((left, right) => hashString(`${rotationKey}:${left.key}`) - hashString(`${rotationKey}:${right.key}`));
+  const shuffledCategories = [...categoryOrder].sort((left, right) => hashString(`${rotationKey}:${left}`) - hashString(`${rotationKey}:${right}`));
+  const selected: MissionTemplate[] = [];
 
-  return rotatedCategories.slice(0, count).map((category) => {
-    const candidates = pool.filter((template) => template.category === category);
-    const candidateIndex = hashString(`${rotationKey}:${category}`) % candidates.length;
-    return candidates[candidateIndex];
-  });
+  for (const category of shuffledCategories) {
+    const candidate = shuffled.find((template) => template.category === category && !selected.includes(template));
+    if (candidate) selected.push(candidate);
+    if (selected.length === count) return selected;
+  }
+
+  for (const template of shuffled) {
+    if (!selected.includes(template)) selected.push(template);
+    if (selected.length === count) break;
+  }
+  return selected;
 }
 
 function getPartialProgress(target: number, ratio: number): number {
@@ -463,11 +557,11 @@ function createMission(
   };
 }
 
-export function createMissionsForDate(referenceDate = new Date()): Mission[] {
+export function createMissionsForDate(referenceDate = new Date(), userSeed = ''): Mission[] {
   const dailyKey = formatLocalDate(referenceDate);
   const weeklyKey = getWeekRotationKey(referenceDate);
-  const dailyTemplates = selectTemplates(dailyMissionPool, 4, `daily:${dailyKey}`);
-  const weeklyTemplates = selectTemplates(weeklyMissionPool, 3, `weekly:${weeklyKey}`);
+  const dailyTemplates = selectTemplates(dailyMissionPool, 3, `daily:${dailyKey}:${userSeed}`);
+  const weeklyTemplates = selectTemplates(weeklyMissionPool, 5, `weekly:${weeklyKey}:${userSeed}`);
 
   return [
     ...dailyTemplates.map((template, index) => createMission(template, 'daily', dailyKey, index)),
@@ -493,17 +587,29 @@ export async function fetchMissionDashboard(referenceDate = new Date()): Promise
   if (sessionError || !sessionData.session?.user) throw new Error('Authentication required');
   const userId = sessionData.session.user.id;
 
-  const { error: assignmentError } = await supabase.rpc('ensure_example_missions');
+  const selectedMissions = createMissionsForDate(referenceDate, userId);
+  const { error: assignmentError } = await supabase.rpc('ensure_rotating_missions', {
+    p_missions: selectedMissions.map((missionItem) => ({
+      id: missionItem.id,
+      title: missionItem.title,
+      description: missionItem.description,
+      category: missionItem.category,
+      period: missionItem.period,
+      rewardPoints: missionItem.rewardPoints,
+      target: missionItem.target,
+      unit: missionItem.unit,
+      deadlineLabel: missionItem.deadlineLabel,
+      instructions: missionItem.instructions,
+      assignedDate: missionItem.assignedDate,
+    })),
+  });
   if (assignmentError) throw new Error('Missions could not be prepared');
-
-  const dailyKey = formatLocalDate(referenceDate);
-  const weeklyKey = getWeekRotationKey(referenceDate);
 
   const { data: missionRows, error: missionError } = await supabase
     .from('user_missions')
     .select('*')
     .eq('user_id', userId)
-    .in('assigned_date', [dailyKey, weeklyKey])
+    .in('id', selectedMissions.map((missionItem) => missionItem.id))
     .order('period')
     .order('created_at');
   if (missionError) throw new Error('Missions could not be loaded');

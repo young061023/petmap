@@ -255,6 +255,17 @@ export default function MapScreen() {
     }));
   }, []);
 
+  const handleGoToCurrentLocation = useCallback(() => {
+    if (!location) return;
+    exploringMapRef.current = false;
+    webviewRef.current?.postMessage(JSON.stringify({
+      type: 'recenter',
+      latitude: location.latitude,
+      longitude: location.longitude,
+    }));
+    void fetchSpotsAt(location);
+  }, [fetchSpotsAt, location]);
+
   // Send the model once the page signals it's ready to receive it.
   useEffect(() => {
     console.warn('[rn] model effect', { webviewReady, hasModel: !!modelDataUri });
@@ -335,7 +346,7 @@ export default function MapScreen() {
   }
 
   return (
-    <MapExplorer spots={petSpots} onViewSpot={handleViewSpot}><WebView
+    <MapExplorer spots={petSpots} onViewSpot={handleViewSpot} onGoToCurrentLocation={handleGoToCurrentLocation}><WebView
       ref={webviewRef}
       style={styles.map}
       source={webviewSource}
