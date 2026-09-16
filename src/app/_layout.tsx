@@ -28,6 +28,8 @@ export default function RootLayout() {
               <Stack.Screen name="login" />
               <Stack.Screen name="signup" />
               <Stack.Screen name="pet-profile" />
+              <Stack.Screen name="privacy-settings" />
+              <Stack.Screen name="customer-support" />
               <Stack.Screen name="missions/[missionId]" />
             </Stack>
           </MissionProvider>
