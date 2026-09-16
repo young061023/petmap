@@ -16,6 +16,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { fetchNearbyPetSpots, type PetSpot } from '@/services/petTourService';
 import { useMapStore } from '@/store/useMapStore';
+import { useAchievements } from '@/features/achievements/AchievementProvider';
 import { MAP_HTML } from '@/web-map/map-html';
 
 // Exponential moving average weight applied to each raw GPS fix — lower
@@ -79,6 +80,7 @@ export default function MapScreen() {
   const setLocation = useMapStore((state) => state.setLocation);
   const permissionStatus = useMapStore((state) => state.permissionStatus);
   const setPermissionStatus = useMapStore((state) => state.setPermissionStatus);
+  const { recordNearbyLocation } = useAchievements();
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [webviewReady, setWebviewReady] = useState(false);
@@ -244,6 +246,15 @@ export default function MapScreen() {
     [fetchSpotsAt],
   );
 
+  const handleViewSpot = useCallback((spot: PetSpot) => {
+    webviewRef.current?.postMessage(JSON.stringify({
+      type: 'focusSpot',
+      id: spot.id,
+      latitude: spot.latitude,
+      longitude: spot.longitude,
+    }));
+  }, []);
+
   // Send the model once the page signals it's ready to receive it.
   useEffect(() => {
     console.warn('[rn] model effect', { webviewReady, hasModel: !!modelDataUri });
@@ -293,6 +304,11 @@ export default function MapScreen() {
     );
   }, [webviewReady, location, heading]);
 
+  useEffect(() => {
+    if (!location || petSpots.length === 0) return;
+    void recordNearbyLocation(location.latitude, location.longitude, petSpots);
+  }, [location, petSpots, recordNearbyLocation]);
+
   // WebView treats a new `source` object as a navigation and reloads the
   // page — without memoizing this, every re-render (e.g. each GPS fix)
   // handed it a fresh object and reset the page before it ever got past the
@@ -319,7 +335,7 @@ export default function MapScreen() {
   }
 
   return (
-    <MapExplorer spots={petSpots}><WebView
+    <MapExplorer spots={petSpots} onViewSpot={handleViewSpot}><WebView
       ref={webviewRef}
       style={styles.map}
       source={webviewSource}

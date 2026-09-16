@@ -452,6 +452,7 @@ function renderSpots(spots) {
     const el = document.createElement('div');
     el.className = 'spot-marker';
     el.textContent = '🐾';
+    el.dataset.spotId = String(spot.id);
 
     const popupHtml =
       '<div class="spot-popup-title">' + escapeHtml(spot.title) + '</div>' +
@@ -467,6 +468,16 @@ function renderSpots(spots) {
   post({ type: 'debug', text: 'rendered ' + spots.length + ' pet spots' });
 }
 
+function focusSpot(msg) {
+  if (!map) return;
+  followEnabled = false;
+  searchAreaButton.classList.remove('visible');
+  map.easeTo({ center: [msg.longitude, msg.latitude], zoom: Math.max(map.getZoom(), 17), duration: 650, essential: true });
+  const marker = spotMarkers.find((item) => item.getElement().dataset.spotId === String(msg.id));
+  const popup = marker && marker.getPopup();
+  if (popup) popup.addTo(map);
+}
+
 function handleMessage(event) {
   let msg;
   try {
@@ -480,6 +491,7 @@ function handleMessage(event) {
   else if (msg.type === 'location') handleLocation(msg);
   else if (msg.type === 'workerCode') setWorkerCode(msg.code);
   else if (msg.type === 'spots') renderSpots(msg.spots);
+  else if (msg.type === 'focusSpot') focusSpot(msg);
   else if (msg.type === 'searchComplete') {
     searchAreaButton.disabled = false;
     if (msg.success) searchAreaButton.classList.remove('visible');

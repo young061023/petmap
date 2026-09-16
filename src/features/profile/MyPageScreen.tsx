@@ -6,10 +6,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { colors, spacing } from '@/constants/theme';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { useAchievements } from '@/features/achievements/AchievementProvider';
 
-function Stat({ value, label }: { value: number; label: string }) { return <View style={styles.stat}><Text style={styles.statValue}>{value.toLocaleString()}</Text><Text style={styles.statLabel}>{label}</Text></View>; }
+function Stat({ value, label }: { value: number; label: string }) { const { unlockedCount } = useAchievements(); const displayedValue = label === '배지' ? unlockedCount : value; return <View style={styles.stat}><Text style={styles.statValue}>{displayedValue.toLocaleString()}</Text><Text style={styles.statLabel}>{label}</Text></View>; }
 function Menu({ label, onPress }: { label: string; onPress?: () => void }) {
-  const handlePress = onPress ?? (label === '개인정보 및 위치정보 설정'
+  const handlePress = onPress ?? (label === '획득 배지'
+    ? () => router.push('/achievements')
+    : label === '개인정보 및 위치정보 설정'
     ? () => router.push('/privacy-settings')
     : label === '고객센터'
       ? () => router.push('/customer-support')

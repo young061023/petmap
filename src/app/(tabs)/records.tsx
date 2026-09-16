@@ -11,6 +11,7 @@ import { PetNameModal } from '@/components/PetNameModal';
 import { WeeklyCalendar } from '@/components/WeeklyCalendar';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useMissions } from '@/features/missions/MissionProvider';
+import { useAchievements } from '@/features/achievements/AchievementProvider';
 import { recordService } from '@/services/recordService';
 import { theme } from '@/theme/theme';
 import type { ActivityCategory, MissionItem, TimelineActivity } from '@/types/record';
@@ -25,6 +26,7 @@ function formatDateString(date: Date): string {
 export default function RecordsScreen() {
   const { profile, updatePetName } = useAuth();
   const { missions: dashboardMissions, setCompleted } = useMissions();
+  const { refresh: refreshAchievements } = useAchievements();
   const petName = profile?.pet?.name ?? '반려견';
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [activities, setActivities] = useState<TimelineActivity[]>([]);
@@ -73,6 +75,7 @@ export default function RecordsScreen() {
   }) => {
     await recordService.addActivity({ ...data, dateString: formatDateString(selectedDate) });
     await loadData();
+    await refreshAchievements();
   };
 
   return (

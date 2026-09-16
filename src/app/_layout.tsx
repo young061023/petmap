@@ -6,6 +6,7 @@ import { colors } from '@/constants/theme';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider } from '@/features/auth/AuthProvider';
+import { AchievementProvider } from '@/features/achievements/AchievementProvider';
 import { MissionProvider } from '@/features/missions/MissionProvider';
 
 void SplashScreen.preventAutoHideAsync();
@@ -22,7 +23,8 @@ export default function RootLayout() {
       <ThemeProvider value={{ ...DefaultTheme, colors: { ...DefaultTheme.colors, background: colors.canvas, card: colors.surface, text: colors.text, primary: colors.primary, border: colors.border } }}>
         <AuthProvider>
           <MissionProvider>
-            <Stack screenOptions={{ headerShown: false }}>
+            <AchievementProvider>
+              <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="index" />
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="login" />
@@ -30,8 +32,10 @@ export default function RootLayout() {
               <Stack.Screen name="pet-profile" />
               <Stack.Screen name="privacy-settings" />
               <Stack.Screen name="customer-support" />
+              <Stack.Screen name="achievements" />
               <Stack.Screen name="missions/[missionId]" />
-            </Stack>
+              </Stack>
+            </AchievementProvider>
           </MissionProvider>
         </AuthProvider>
       </ThemeProvider>
