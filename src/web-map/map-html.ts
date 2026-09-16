@@ -360,8 +360,9 @@ function ensureMap(lng, lat) {
     post({ type: 'debug', text: 'map load event fired' });
     map.addLayer(characterLayer);
     if (pendingSpots) {
-      renderSpots(pendingSpots);
+      const spots = pendingSpots;
       pendingSpots = null;
+      renderSpots(spots);
     }
   });
   map.on('error', (e) => {
@@ -432,7 +433,7 @@ function escapeHtml(str) {
 // don't need to share the map's own draw call, so the jitter concern that
 // ruled out DOM markers for the character doesn't apply to static POIs).
 function renderSpots(spots) {
-  if (!map || !map.loaded()) {
+  if (!map || !map.isStyleLoaded()) {
     pendingSpots = spots;
     return;
   }
