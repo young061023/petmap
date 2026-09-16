@@ -15,7 +15,7 @@ import {
 export default function MissionDetailScreen() {
   const params = useLocalSearchParams<{ missionId?: string | string[] }>();
   const missionId = Array.isArray(params.missionId) ? params.missionId[0] : params.missionId;
-  const { missions, isLoading, errorMessage, claimingMissionId, claimReward } = useMissions();
+  const { missions, isLoading, errorMessage } = useMissions();
   const mission = missions.find((item) => item.id === missionId);
 
   const goBack = () => {
@@ -59,7 +59,6 @@ export default function MissionDetailScreen() {
 
   const status = getMissionStatus(mission);
   const progressText = formatMissionProgress(mission);
-  const isClaiming = claimingMissionId === mission.id;
   const categoryLabel = {
     walk: '산책',
     place: '장소 탐험',
@@ -112,22 +111,6 @@ export default function MissionDetailScreen() {
           </View>
         </View>
 
-        <View style={styles.rewardSection}>
-          <View style={styles.rewardIcon}>
-            <MissionSymbol name="gift" size={26} color={missionColors.warning} />
-          </View>
-          <View style={styles.rewardCopy}>
-            <Text style={styles.rewardLabel}>완료 보상</Text>
-            <Text style={styles.rewardValue}>{mission.rewardPoints} 포인트</Text>
-          </View>
-          {status === 'claimed' && (
-            <View style={styles.claimedBadge}>
-              <MissionSymbol name="check" size={17} color={missionColors.success} />
-              <Text style={styles.claimedText}>받음</Text>
-            </View>
-          )}
-        </View>
-
         <View style={styles.instructionsSection}>
           <Text style={styles.instructionsTitle}>이렇게 달성해요</Text>
           {mission.instructions.map((instruction, index) => (
@@ -152,33 +135,22 @@ export default function MissionDetailScreen() {
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ disabled: status !== 'completed' || isClaiming }}
-          disabled={status !== 'completed' || isClaiming}
-          onPress={() => {
-            void claimReward(mission.id);
-          }}
-          style={({ pressed }) => [
+        <View
+          accessibilityRole="text"
+          style={[
             styles.actionButton,
-            status === 'claimed' && styles.claimedButton,
-            status === 'inProgress' && styles.inProgressButton,
-            pressed && status === 'completed' && styles.actionButtonPressed,
+            status !== 'inProgress' ? styles.claimedButton : styles.inProgressButton,
           ]}
         >
-          {isClaiming ? (
-            <ActivityIndicator color={missionColors.onPrimary} />
-          ) : status === 'claimed' ? (
+          {status !== 'inProgress' ? (
             <View style={styles.actionLabelRow}>
               <MissionSymbol name="check" size={22} color={missionColors.success} />
-              <Text style={styles.claimedButtonText}>보상을 받았어요</Text>
+              <Text style={styles.claimedButtonText}>미션 완료</Text>
             </View>
-          ) : status === 'completed' ? (
-            <Text style={styles.actionButtonText}>{mission.rewardPoints}P 보상 받기</Text>
           ) : (
             <Text style={styles.inProgressButtonText}>미션 진행 중</Text>
           )}
-        </Pressable>
+        </View>
       </View>
     </SafeAreaView>
   );

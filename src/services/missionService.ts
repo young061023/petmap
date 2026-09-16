@@ -1,7 +1,6 @@
 import type {
   Mission,
   MissionCategory,
-  MissionClaimResult,
   MissionDashboard,
   MissionPeriod,
 } from '@/types/mission';
@@ -614,14 +613,7 @@ export async function fetchMissionDashboard(referenceDate = new Date()): Promise
     .order('created_at');
   if (missionError) throw new Error('Missions could not be loaded');
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('point_balance')
-    .eq('id', userId)
-    .maybeSingle();
-
   return {
-    points: Number(profile?.point_balance ?? 0),
     streakDays: 0,
     missions: (missionRows ?? []).map((row) => ({
       id: row.id,
@@ -639,13 +631,6 @@ export async function fetchMissionDashboard(referenceDate = new Date()): Promise
       claimedAt: row.claimed_at ?? undefined,
     })),
   };
-}
-
-export async function claimMissionReward(missionId: string): Promise<MissionClaimResult> {
-  const { data, error } = await supabase.rpc('claim_mission_reward', { p_mission_id: missionId });
-  if (error || !data) throw new Error(error?.message ?? 'Mission reward could not be claimed');
-  const result = Array.isArray(data) ? data[0] : data;
-  return { missionId: result.mission_id, claimedAt: result.claimed_at };
 }
 
 export async function setMissionCompletion(missionId: string, completed: boolean): Promise<Mission> {

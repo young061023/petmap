@@ -23,12 +23,6 @@ export interface Mission {
 }
 
 export interface MissionDashboard {
-  points: number;
   streakDays: number;
   missions: Mission[];
-}
-
-export interface MissionClaimResult {
-  missionId: string;
-  claimedAt: string;
 }

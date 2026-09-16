@@ -23,7 +23,7 @@ const filterOptions: readonly MissionSegmentOption<MissionFilter>[] = [
 ];
 
 export default function MissionScreen() {
-  const { missions, points, streakDays, isLoading, errorMessage, claimingMissionId, claimReward, setCompleted } = useMissions();
+  const { missions, streakDays, isLoading, errorMessage, setCompleted } = useMissions();
   const [period, setPeriod] = useState<MissionPeriod>('daily');
   const [filter, setFilter] = useState<MissionFilter>('all');
   const [completingMissionId, setCompletingMissionId] = useState<string | null>(null);
@@ -42,7 +42,7 @@ export default function MissionScreen() {
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <MissionOverview points={points} streakDays={streakDays} completedCount={completedDailyCount} totalCount={dailyMissions.length} />
+        <MissionOverview streakDays={streakDays} completedCount={completedDailyCount} totalCount={dailyMissions.length} />
         <View style={styles.content}>
           <MissionSegmentedControl accessibilityLabel="미션 기간" value={period} options={periodOptions} onChange={setPeriod} />
           <MissionSegmentedControl accessibilityLabel="미션 상태" value={filter} options={filterOptions} onChange={setFilter} compact />
@@ -50,7 +50,7 @@ export default function MissionScreen() {
           {isLoading ? (
             <View style={styles.loadingState}><ActivityIndicator color={missionColors.primary} size="large" /><Text style={styles.loadingText}>미션을 불러오고 있어요</Text></View>
           ) : visibleMissions.length ? (
-            <View style={styles.missionList}>{visibleMissions.map((mission) => <MissionCard key={mission.id} mission={mission} isClaiming={claimingMissionId === mission.id} isCompleting={completingMissionId === mission.id} onPress={() => router.push({ pathname: '/missions/[missionId]', params: { missionId: mission.id } })} onClaim={() => void claimReward(mission.id)} onComplete={() => void completeMission(mission.id)} />)}</View>
+            <View style={styles.missionList}>{visibleMissions.map((mission) => <MissionCard key={mission.id} mission={mission} isCompleting={completingMissionId === mission.id} onPress={() => router.push({ pathname: '/missions/[missionId]', params: { missionId: mission.id } })} onComplete={() => void completeMission(mission.id)} />)}</View>
           ) : <MissionEmptyState />}
         </View>
       </ScrollView>
