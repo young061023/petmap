@@ -53,6 +53,11 @@ export const MAP_HTML = `<!DOCTYPE html>
   html, body, #map { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #FAFAF6; }
   #status { position: absolute; top: 16px; left: 16px; z-index: 10; color: #68736C; font: 12px sans-serif;
     background: #FAFAF6; padding: 10px 14px; border: 1px solid #DFE6DF; border-radius: 18px; pointer-events: none; }
+  #search-area { display: none; position: absolute; top: 16px; left: 50%; z-index: 12; transform: translateX(-50%);
+    min-height: 42px; padding: 0 18px; border: 1px solid #456B54; border-radius: 22px; background: #FFFFFF;
+    color: #456B54; font: 700 14px sans-serif; box-shadow: 0 4px 14px rgba(38,53,44,0.2); white-space: nowrap; }
+  #search-area.visible { display: block; }
+  #search-area:disabled { opacity: 0.7; }
   .spot-marker { display: grid; place-items: center; width: 40px; height: 40px; background: #769883; color: #14231A;
     border: 2px solid #456B54; border-radius: 50% 50% 50% 12px; font-size: 22px; line-height: 1; cursor: pointer;
     box-shadow: 0 3px 8px rgba(38,53,44,0.14); }
@@ -65,6 +70,7 @@ export const MAP_HTML = `<!DOCTYPE html>
 <body>
 <div id="map"></div>
 <div id="status">waiting for GPS...</div>
+<button id="search-area" type="button">이 위치에서 찾기</button>
 <script>
   // A classic (non-module) script, so it runs regardless of whether the
   // module script below (or its imports) fail — a failed import means
@@ -114,10 +120,9 @@ const WALK_CLIP = 'Walk';
 const CROSSFADE_SECONDS = 0.3;
 // Pokémon GO-style camera: re-center on the character on every GPS fix
 // (fixes arrive ~every 2s, so a short ease never overlaps the next one).
-// If the user drags/zooms the map themselves, following pauses and resumes
-// on its own a couple seconds after they let go.
+// If the user drags/zooms the map themselves, following pauses so they can
+// search around the new map center without a later GPS fix snapping it back.
 const FOLLOW_EASE_MS = 350;
-const FOLLOW_RESUME_DELAY_MS = 2500;
 // Fox.glb is modeled in meters at roughly real-world fox size; scale it up
 // so it reads clearly against building/road geometry at street zoom levels
 // (tuned by eye, matches the native version's on-screen presence).
@@ -136,7 +141,6 @@ let currentHeadingRad = 0;
 let workerReady = false;
 let pendingMapCenter = null;
 let followEnabled = true;
-let resumeFollowTimeout = null;
 let spotMarkers = [];
 let pendingSpots = null;
 
@@ -145,6 +149,20 @@ function setStatus(text) {
   el.textContent = text;
   el.style.display = text ? 'block' : 'none';
 }
+
+const searchAreaButton = document.getElementById('search-area');
+function showSearchAreaButton() {
+  searchAreaButton.disabled = false;
+  searchAreaButton.textContent = '이 위치에서 찾기';
+  searchAreaButton.classList.add('visible');
+}
+searchAreaButton.addEventListener('click', () => {
+  if (!map || searchAreaButton.disabled) return;
+  const center = map.getCenter();
+  searchAreaButton.disabled = true;
+  searchAreaButton.textContent = '찾는 중...';
+  post({ type: 'searchArea', latitude: center.lat, longitude: center.lng });
+});
 
 function setClip(name) {
   if (currentClipName === name) return;
@@ -375,29 +393,19 @@ function ensureMap(lng, lat) {
   const pauseFollow = (e) => {
     if (!e.originalEvent) return;
     followEnabled = false;
-    if (resumeFollowTimeout) clearTimeout(resumeFollowTimeout);
   };
-  const scheduleResumeFollow = (e) => {
+  const offerAreaSearch = (e) => {
     if (!e.originalEvent) return;
-    if (resumeFollowTimeout) clearTimeout(resumeFollowTimeout);
-    resumeFollowTimeout = setTimeout(() => {
-      followEnabled = true;
-      // Snap back right away instead of waiting for the next GPS fix — if
-      // the character hasn't moved (or moved less than distanceInterval)
-      // since the drag, no new 'location' message may arrive for a while.
-      if (currentLngLat) {
-        map.easeTo({ center: currentLngLat, duration: FOLLOW_EASE_MS, easing: (t) => t });
-      }
-    }, FOLLOW_RESUME_DELAY_MS);
+    showSearchAreaButton();
   };
   map.on('dragstart', pauseFollow);
   map.on('zoomstart', pauseFollow);
   map.on('rotatestart', pauseFollow);
   map.on('pitchstart', pauseFollow);
-  map.on('dragend', scheduleResumeFollow);
-  map.on('zoomend', scheduleResumeFollow);
-  map.on('rotateend', scheduleResumeFollow);
-  map.on('pitchend', scheduleResumeFollow);
+  map.on('dragend', offerAreaSearch);
+  map.on('zoomend', offerAreaSearch);
+  map.on('rotateend', offerAreaSearch);
+  map.on('pitchend', offerAreaSearch);
 }
 
 function handleLocation(msg) {
@@ -472,6 +480,11 @@ function handleMessage(event) {
   else if (msg.type === 'location') handleLocation(msg);
   else if (msg.type === 'workerCode') setWorkerCode(msg.code);
   else if (msg.type === 'spots') renderSpots(msg.spots);
+  else if (msg.type === 'searchComplete') {
+    searchAreaButton.disabled = false;
+    if (msg.success) searchAreaButton.classList.remove('visible');
+    else searchAreaButton.textContent = '다시 찾기';
+  }
 }
 
 document.addEventListener('message', handleMessage);

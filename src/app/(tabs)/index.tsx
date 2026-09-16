@@ -90,6 +90,8 @@ export default function MapScreen() {
   const webviewRef = useRef<WebView>(null);
   const smoothedLocationRef = useRef<{ latitude: number; longitude: number } | null>(null);
   const spotsFetchCenterRef = useRef<{ latitude: number; longitude: number } | null>(null);
+  const exploringMapRef = useRef(false);
+  const spotsRequestIdRef = useRef(0);
 
   useEffect(() => {
     let subscription: Location.LocationSubscription | undefined;
@@ -207,9 +209,25 @@ export default function MapScreen() {
     };
   }, []);
 
+  const fetchSpotsAt = useCallback(
+    async (center: { latitude: number; longitude: number }, initiatedByMap = false) => {
+      const requestId = ++spotsRequestIdRef.current;
+      spotsFetchCenterRef.current = center;
+      try {
+        const spots = await fetchNearbyPetSpots(center.latitude, center.longitude);
+        if (requestId === spotsRequestIdRef.current) setPetSpots(spots);
+        if (initiatedByMap) webviewRef.current?.postMessage(JSON.stringify({ type: 'searchComplete', success: true }));
+      } catch (error) {
+        console.warn('[petTour] fetch failed', error);
+        if (initiatedByMap) webviewRef.current?.postMessage(JSON.stringify({ type: 'searchComplete', success: false }));
+      }
+    },
+    [],
+  );
+
   const handleMessage = useCallback(
     (event: WebViewMessageEvent) => {
-      let message: { type?: string; text?: string };
+      let message: { type?: string; text?: string; latitude?: number; longitude?: number };
       try {
         message = JSON.parse(event.nativeEvent.data);
       } catch {
@@ -218,8 +236,12 @@ export default function MapScreen() {
       }
       console.warn('[webview]', message.type, message.text ?? '');
       if (message.type === 'ready') setWebviewReady(true);
+      if (message.type === 'searchArea' && typeof message.latitude === 'number' && Number.isFinite(message.latitude) && typeof message.longitude === 'number' && Number.isFinite(message.longitude)) {
+        exploringMapRef.current = true;
+        void fetchSpotsAt({ latitude: message.latitude, longitude: message.longitude }, true);
+      }
     },
-    [],
+    [fetchSpotsAt],
   );
 
   // Send the model once the page signals it's ready to receive it.
@@ -242,7 +264,7 @@ export default function MapScreen() {
   // around the user's current location, re-fetching only once they've moved
   // far enough that the previous result set is stale.
   useEffect(() => {
-    if (!location) return;
+    if (!location || exploringMapRef.current) return;
     const lastCenter = spotsFetchCenterRef.current;
     const moved =
       !lastCenter ||
@@ -250,15 +272,12 @@ export default function MapScreen() {
         SPOT_REFETCH_DISTANCE_DEG;
     if (!moved) return;
 
-    spotsFetchCenterRef.current = location;
-    fetchNearbyPetSpots(location.latitude, location.longitude)
-      .then(setPetSpots)
-      .catch((error) => console.warn('[petTour] fetch failed', error));
-  }, [location]);
+    void fetchSpotsAt(location);
+  }, [fetchSpotsAt, location]);
 
   // Forward fetched spots into the page as they arrive/update.
   useEffect(() => {
-    if (!webviewReady || petSpots.length === 0) return;
+    if (!webviewReady) return;
     webviewRef.current?.postMessage(JSON.stringify({ type: 'spots', spots: petSpots }));
   }, [webviewReady, petSpots]);
 
