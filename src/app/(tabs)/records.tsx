@@ -14,7 +14,7 @@ import { useMissions } from '@/features/missions/MissionProvider';
 import { useAchievements } from '@/features/achievements/AchievementProvider';
 import { recordService } from '@/services/recordService';
 import { theme } from '@/theme/theme';
-import type { ActivityCategory, MissionItem, TimelineActivity } from '@/types/record';
+import type { ActivityCategory, LocalRecordMedia, MissionItem, TimelineActivity } from '@/types/record';
 
 function formatDateString(date: Date): string {
   const year = date.getFullYear();
@@ -72,6 +72,7 @@ export default function RecordsScreen() {
     category: ActivityCategory;
     time: string;
     location?: string;
+    media?: LocalRecordMedia;
   }) => {
     await recordService.addActivity({ ...data, dateString: formatDateString(selectedDate) });
     await loadData();

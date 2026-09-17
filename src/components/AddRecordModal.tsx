@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import {
+  Image,
   Modal,
   View,
   Text,
@@ -10,9 +11,10 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { X, Plus, Clock, MapPin, Tag } from 'lucide-react-native';
-import { ActivityCategory } from '../types/record';
+import { X, Plus, Clock, MapPin, Tag, Camera, Video } from 'lucide-react-native';
+import { ActivityCategory, type LocalRecordMedia } from '../types/record';
 import { theme } from '../theme/theme';
+import { RecordCameraModal } from './RecordCameraModal';
 
 interface AddRecordModalProps {
   visible: boolean;
@@ -23,6 +25,7 @@ interface AddRecordModalProps {
     category: ActivityCategory;
     time: string;
     location?: string;
+    media?: LocalRecordMedia;
   }) => void;
 }
 
@@ -37,6 +40,8 @@ export const AddRecordModal: React.FC<AddRecordModalProps> = ({
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<ActivityCategory>('산책');
   const [location, setLocation] = useState('');
+  const [media, setMedia] = useState<LocalRecordMedia | undefined>();
+  const [cameraVisible, setCameraVisible] = useState(false);
   const [time, setTime] = useState(() => {
     const now = new Date();
     const hours = now.getHours();
@@ -46,6 +51,10 @@ export const AddRecordModal: React.FC<AddRecordModalProps> = ({
     return `${formattedHours}:${mins} ${ampm}`;
   });
 
+  useEffect(() => {
+    if (!visible) setCameraVisible(false);
+  }, [visible]);
+
   const handleSave = () => {
     if (!title.trim()) return;
     onAdd({
@@ -54,21 +63,24 @@ export const AddRecordModal: React.FC<AddRecordModalProps> = ({
       category,
       time,
       location: location.trim() || undefined,
+      media,
     });
     // Reset state
     setTitle('');
     setDescription('');
     setLocation('');
+    setMedia(undefined);
     onClose();
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Fragment>
+      <Modal
+        visible={visible}
+        transparent
+        animationType="slide"
+        onRequestClose={onClose}
+      >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.overlay}
@@ -127,6 +139,32 @@ export const AddRecordModal: React.FC<AddRecordModalProps> = ({
               onChangeText={setTitle}
             />
 
+            <Text style={styles.label}>사진 또는 3초 영상 (선택)</Text>
+            {media ? (
+              <View style={styles.mediaPreview}>
+                {media.type === 'photo' ? (
+                  <Image source={{ uri: media.uri }} style={styles.previewImage} resizeMode="cover" />
+                ) : (
+                  <View style={styles.videoPreview}>
+                    <Video size={28} color={theme.colors.primary} />
+                    <Text style={styles.videoPreviewTitle}>3초 영상 촬영 완료</Text>
+                    <Text style={styles.videoPreviewText}>앱 전용 로컬 저장소에 저장됩니다.</Text>
+                  </View>
+                )}
+                <Pressable accessibilityLabel="촬영 파일 삭제" onPress={() => setMedia(undefined)} style={styles.removeMedia}>
+                  <X size={17} color="#FFFFFF" />
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable accessibilityRole="button" onPress={() => setCameraVisible(true)} style={styles.cameraButton}>
+                <Camera size={21} color={theme.colors.primary} />
+                <View style={styles.cameraButtonCopy}>
+                  <Text style={styles.cameraButtonTitle}>지금 촬영하기</Text>
+                  <Text style={styles.cameraButtonText}>앨범 불러오기 없이 카메라만 사용해요</Text>
+                </View>
+              </Pressable>
+            )}
+
             {/* Time & Location Row */}
             <View style={styles.rowTwo}>
               <View style={{ flex: 1 }}>
@@ -182,7 +220,13 @@ export const AddRecordModal: React.FC<AddRecordModalProps> = ({
           </Pressable>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+      </Modal>
+      <RecordCameraModal
+        visible={cameraVisible}
+        onClose={() => setCameraVisible(false)}
+        onCaptured={setMedia}
+      />
+    </Fragment>
   );
 };
 
@@ -282,6 +326,16 @@ const styles = StyleSheet.create({
   multilineInput: {
     minHeight: 70,
   },
+  cameraButton: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 68, padding: 14, borderRadius: theme.borderRadius.md, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.background },
+  cameraButtonCopy: { flex: 1 },
+  cameraButtonTitle: { color: theme.colors.textMain, fontSize: 14, fontWeight: '700' },
+  cameraButtonText: { marginTop: 3, color: theme.colors.textSub, fontSize: 11 },
+  mediaPreview: { minHeight: 108, overflow: 'hidden', borderRadius: theme.borderRadius.md, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.background },
+  previewImage: { width: '100%', height: 150 },
+  videoPreview: { minHeight: 108, alignItems: 'center', justifyContent: 'center', padding: 16 },
+  videoPreviewTitle: { marginTop: 7, color: theme.colors.textMain, fontSize: 14, fontWeight: '700' },
+  videoPreviewText: { marginTop: 3, color: theme.colors.textSub, fontSize: 11 },
+  removeMedia: { position: 'absolute', top: 8, right: 8, width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: 16, backgroundColor: 'rgba(20,35,26,0.72)' },
   submitBtn: {
     backgroundColor: theme.colors.primary,
     paddingVertical: 14,

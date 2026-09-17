@@ -10,7 +10,11 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.petmap.daenglocal",
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "infoPlist": {
+        "NSCameraUsageDescription": "댕로컬이 여행 기록에 사진과 영상을 촬영하기 위해 카메라를 사용합니다.",
+        "NSMicrophoneUsageDescription": "댕로컬이 3초 여행 영상을 녹화하기 위해 마이크를 사용합니다."
+      }
     },
     "android": {
       "package": "com.petmap.daenglocal",
@@ -47,8 +51,18 @@
           "locationWhenInUsePermission": "댕로컬이 지도에서 현재 위치를 표시하기 위해 위치를 사용합니다."
         }
       ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "댕로컬이 여행 기록에 사진과 영상을 촬영하기 위해 카메라를 사용합니다.",
+          "microphonePermission": "댕로컬이 3초 여행 영상을 녹화하기 위해 마이크를 사용합니다.",
+          "recordAudioAndroid": true,
+          "barcodeScannerEnabled": false
+        }
+      ],
       "expo-asset",
-      "expo-image"
+      "expo-image",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,

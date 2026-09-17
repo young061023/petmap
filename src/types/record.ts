@@ -1,5 +1,10 @@
 export type ActivityCategory = '산책' | '간식' | '놀이' | '병원' | '여행' | '기록';
 
+export interface LocalRecordMedia {
+  type: 'photo' | 'video';
+  uri: string;
+}
+
 export interface TimelineActivity {
   id: string;
   time: string; // e.g. "09:30 AM" or "09:30"
@@ -10,6 +15,7 @@ export interface TimelineActivity {
   location?: string;
   iconName?: string;
   imageUrl?: any; // Photo sample for timeline
+  media?: LocalRecordMedia;
 }
 
 export interface MissionItem {

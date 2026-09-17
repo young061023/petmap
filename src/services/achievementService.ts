@@ -2,9 +2,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ACHIEVEMENT_DEFINITIONS } from '@/constants/achievements';
 import { supabase } from '@/services/supabase';
+import { recordService } from '@/services/recordService';
 import type { Achievement, PlaceVisit } from '@/types/achievement';
 
-type RecordRow = { record_date: string; record_time: string; image_url: string | null };
+type RecordRow = { id: string; record_date: string; record_time: string; image_url: string | null };
 type MissionRow = { assigned_date: string; period: 'daily' | 'weekly'; progress: number; target: number };
 type UnlockedMap = Record<string, string>;
 
@@ -53,11 +54,12 @@ async function readVisits(userId: string): Promise<PlaceVisit[]> {
 export const achievementService = {
   async getAchievements(): Promise<Achievement[]> {
     const userId = await getUserId();
-    const [recordsResult, missionsResult, visits, unlockedValue] = await Promise.all([
-      supabase.from('records').select('record_date,record_time,image_url').eq('user_id', userId),
+    const [recordsResult, missionsResult, visits, unlockedValue, localMediaIndex] = await Promise.all([
+      supabase.from('records').select('id,record_date,record_time,image_url').eq('user_id', userId),
       supabase.from('user_missions').select('assigned_date,period,progress,target').eq('user_id', userId),
       readVisits(userId),
       AsyncStorage.getItem(unlockedKey(userId)),
+      recordService.getLocalMediaIndex(),
     ]);
     if (recordsResult.error) throw new Error('기록 업적을 불러오지 못했어요.');
     if (missionsResult.error) throw new Error('미션 업적을 불러오지 못했어요.');
@@ -69,8 +71,8 @@ export const achievementService = {
     const visitsPerDay = maxCount(visits.map((visit) => localDateKey(visit.visitedAt)));
     const visitsPerPlace = maxCount(visits.map((visit) => visit.placeId));
     const recordStreak = longestDateStreak(records.map((record) => record.record_date));
-    const photos = records.filter((record) => !!record.image_url && !isVideo(record.image_url)).length;
-    const videos = records.filter((record) => isVideo(record.image_url)).length;
+    const photos = records.filter((record) => localMediaIndex[record.id]?.type === 'photo' || (!localMediaIndex[record.id] && !!record.image_url && !isVideo(record.image_url))).length;
+    const videos = records.filter((record) => localMediaIndex[record.id]?.type === 'video' || (!localMediaIndex[record.id] && isVideo(record.image_url))).length;
     const morningVisit = visits.some((visit) => new Date(visit.visitedAt).getHours() < 12) ? 1 : 0;
     const eveningVisit = visits.some((visit) => new Date(visit.visitedAt).getHours() >= 18) ? 1 : 0;
     const coffeeAfterWalk = visits.some((cafe) => cafe.contentTypeId === '39' && visits.some((walk) => walk.contentTypeId !== '39' && new Date(cafe.visitedAt).getTime() - new Date(walk.visitedAt).getTime() > 0 && new Date(cafe.visitedAt).getTime() - new Date(walk.visitedAt).getTime() <= 7_200_000)) ? 1 : 0;
