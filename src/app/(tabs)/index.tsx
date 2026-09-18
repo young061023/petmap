@@ -16,6 +16,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { fetchNearbyPetSpots, type PetSpot } from '@/services/petTourService';
 import { useMapStore } from '@/store/useMapStore';
+import { useCharacterStore, type CharacterType } from '@/store/useCharacterStore';
 import { useAchievements } from '@/features/achievements/AchievementProvider';
 import { MAP_HTML } from '@/web-map/map-html';
 
@@ -28,7 +29,11 @@ const GPS_SMOOTHING_ALPHA = 0.35;
 // isn't hit on every GPS tick. ~0.015deg is ~1.5km at Korea's latitudes.
 const SPOT_REFETCH_DISTANCE_DEG = 0.015;
 
-const FOX_MODEL_MODULE = require('../../../assets/models/fox.glb');
+const CHARACTER_MODEL_MODULES: Record<CharacterType, number> = {
+  dog: require('../../../assets/models/maltese.glb'),
+  cat: require('../../../assets/models/cat.glb'),
+  fox: require('../../../assets/models/fox.glb'),
+};
 
 const WEB_MAP_DIR = `${cacheDirectory}web-map/`;
 
@@ -80,10 +85,18 @@ export default function MapScreen() {
   const setLocation = useMapStore((state) => state.setLocation);
   const permissionStatus = useMapStore((state) => state.permissionStatus);
   const setPermissionStatus = useMapStore((state) => state.setPermissionStatus);
+  const character = useCharacterStore((state) => state.character);
   const { recordNearbyLocation } = useAchievements();
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [webviewReady, setWebviewReady] = useState(false);
+  // A tick counter rather than a boolean: the WebView can reload on its own
+  // (Android recreating it under memory pressure, dev Fast Refresh, etc.),
+  // sending a second 'ready' message. Setting a boolean to `true` again is a
+  // same-value update React bails out of, so effects keyed on it would never
+  // re-fire and the reloaded page would sit stuck forever with no model,
+  // worker bundle, spots, or location ever resent to it. Each 'ready'
+  // bumping a counter guarantees a distinct value every time.
+  const [webviewReadyTick, setWebviewReadyTick] = useState(0);
   const [modelDataUri, setModelDataUri] = useState<string | null>(null);
   const [mapHtmlFileUri, setMapHtmlFileUri] = useState<string | null>(null);
   const [workerCode, setWorkerCode] = useState<string | null>(null);
@@ -144,12 +157,14 @@ export default function MapScreen() {
   // The character model is bundled locally (never depends on network to
   // render) and read once as base64 so it can be handed to the WebView's
   // GLTFLoader as a data URI — the WebView has no access to the app's local
-  // asset filesystem otherwise.
+  // asset filesystem otherwise. Re-runs whenever the user picks a different
+  // character on the My page so the new model gets loaded and resent (see
+  // the 'sending model' effect below, which fires on modelDataUri changing).
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
-      const asset = Asset.fromModule(FOX_MODEL_MODULE);
+      const asset = Asset.fromModule(CHARACTER_MODEL_MODULES[character]);
       await asset.downloadAsync();
       const uri = asset.localUri ?? asset.uri;
       const base64 = await readAsStringAsync(uri, { encoding: EncodingType.Base64 });
@@ -159,7 +174,7 @@ export default function MapScreen() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [character]);
 
   // Sent as plain text (not written to disk like WEB_LIB_ASSETS) so the page
   // can build its own Blob with an explicit MIME type for maplibre-gl's
@@ -237,7 +252,7 @@ export default function MapScreen() {
         return;
       }
       console.warn('[webview]', message.type, message.text ?? '');
-      if (message.type === 'ready') setWebviewReady(true);
+      if (message.type === 'ready') setWebviewReadyTick((tick) => tick + 1);
       if (message.type === 'searchArea' && typeof message.latitude === 'number' && Number.isFinite(message.latitude) && typeof message.longitude === 'number' && Number.isFinite(message.longitude)) {
         exploringMapRef.current = true;
         void fetchSpotsAt({ latitude: message.latitude, longitude: message.longitude }, true);
@@ -268,19 +283,19 @@ export default function MapScreen() {
 
   // Send the model once the page signals it's ready to receive it.
   useEffect(() => {
-    console.warn('[rn] model effect', { webviewReady, hasModel: !!modelDataUri });
-    if (!webviewReady || !modelDataUri) return;
+    console.warn('[rn] model effect', { webviewReadyTick, hasModel: !!modelDataUri });
+    if (!webviewReadyTick || !modelDataUri) return;
     console.warn('[rn] sending model, length', modelDataUri.length);
     webviewRef.current?.postMessage(JSON.stringify({ type: 'model', dataUri: modelDataUri }));
-  }, [webviewReady, modelDataUri]);
+  }, [webviewReadyTick, modelDataUri]);
 
   // Send maplibre's worker bundle as raw text so the page can build its own
   // Blob URL for it (see WORKER_BUNDLE_MODULE above).
   useEffect(() => {
-    if (!webviewReady || !workerCode) return;
+    if (!webviewReadyTick || !workerCode) return;
     console.warn('[rn] sending worker code, length', workerCode.length);
     webviewRef.current?.postMessage(JSON.stringify({ type: 'workerCode', code: workerCode }));
-  }, [webviewReady, workerCode]);
+  }, [webviewReadyTick, workerCode]);
 
   // Fetch nearby pet-friendly tourism spots (한국관광공사 KorPetTourService2)
   // around the user's current location, re-fetching only once they've moved
@@ -299,21 +314,21 @@ export default function MapScreen() {
 
   // Forward fetched spots into the page as they arrive/update.
   useEffect(() => {
-    if (!webviewReady) return;
+    if (!webviewReadyTick) return;
     webviewRef.current?.postMessage(JSON.stringify({ type: 'spots', spots: petSpots }));
-  }, [webviewReady, petSpots]);
+  }, [webviewReadyTick, petSpots]);
 
   // Forward every smoothed GPS fix into the page — this is the only way the
   // character's position changes; the WebView never touches
   // navigator.geolocation itself.
   useEffect(() => {
-    console.warn('[rn] location effect', { webviewReady, location });
-    if (!webviewReady || !location) return;
+    console.warn('[rn] location effect', { webviewReadyTick, location });
+    if (!webviewReadyTick || !location) return;
     console.warn('[rn] sending location', location, heading);
     webviewRef.current?.postMessage(
       JSON.stringify({ type: 'location', latitude: location.latitude, longitude: location.longitude, heading }),
     );
-  }, [webviewReady, location, heading]);
+  }, [webviewReadyTick, location, heading]);
 
   useEffect(() => {
     if (!location || petSpots.length === 0) return;

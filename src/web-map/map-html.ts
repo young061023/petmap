@@ -123,9 +123,9 @@ const CROSSFADE_SECONDS = 0.3;
 // If the user drags/zooms the map themselves, following pauses so they can
 // search around the new map center without a later GPS fix snapping it back.
 const FOLLOW_EASE_MS = 350;
-// Fox.glb is modeled in meters at roughly real-world fox size; scale it up
-// so it reads clearly against building/road geometry at street zoom levels
-// (tuned by eye, matches the native version's on-screen presence).
+// The character model's raw units read clearly against building/road
+// geometry at street zoom levels once scaled up this much (tuned by eye,
+// matches the native version's on-screen presence).
 const MODEL_SCALE_METERS = 6;
 
 let map = null;
@@ -259,8 +259,9 @@ function loadModel(dataUri) {
     dataUri,
     (gltf) => {
       const model = gltf.scene;
-      // fox.glb's raw scene units are huge (~150 units tall) — matches the
-      // native version's <Center scale={0.02}>. Measure the box in the
+      // The character model's raw scene units are huge (tens-to-hundreds of
+      // units tall) — matches the native version's <Center scale={0.02}>.
+      // Measure the box in the
       // model's original (unscaled) space first, then scale, then position
       // using offsets scaled to match — Box3 reads the object's last-computed
       // world matrix, which doesn't retroactively reflect a scale set just
@@ -288,6 +289,12 @@ function loadModel(dataUri) {
         });
         node.renderOrder = 999;
       });
+      // loadModel can run more than once against the same still-live scene
+      // (e.g. the RN side resending 'model' after a WebView reload it can't
+      // always distinguish from an in-place refresh) — without clearing the
+      // group first, the old model stays in the scene and a second character
+      // ends up rendered on top of/next to the first.
+      while (characterGroup.children.length) characterGroup.remove(characterGroup.children[0]);
       characterGroup.add(model);
       post({ type: 'debug', text: 'model added, rawSize=' + size.x.toFixed(1) + ',' + size.y.toFixed(1) + ',' + size.z.toFixed(1) + ' childCount=' + characterGroup.children.length });
 
@@ -408,20 +415,105 @@ function ensureMap(lng, lat) {
   map.on('pitchend', offerAreaSearch);
 }
 
+// Snaps the character's on-screen position to the nearest road so it doesn't
+// appear to stand on top of a building — raw GPS is routinely a few meters
+// off, which reads as clearly wrong against the style's 3D building
+// extrusions. Reads road geometry MapLibre has already fetched/rendered for
+// the current view (queryRenderedFeatures) rather than calling an external
+// snapping API — network requests made from inside this WebView don't
+// reliably complete on this device (see the file-header comment), and this
+// needs none.
+const MAX_SNAP_METERS = 25;
+const METERS_PER_DEGREE = 111320;
+
+function closestPointOnSegment(px, py, ax, ay, bx, by) {
+  const abx = bx - ax;
+  const aby = by - ay;
+  const lenSq = abx * abx + aby * aby;
+  let t = lenSq > 0 ? ((px - ax) * abx + (py - ay) * aby) / lenSq : 0;
+  t = Math.max(0, Math.min(1, t));
+  return { x: ax + abx * t, y: ay + aby * t };
+}
+
+// Flat-earth approximation (scaling longitude by cos(lat)) is accurate
+// enough at the few-meter scale this snaps within.
+function snapToRoad(lng, lat) {
+  if (!map || !map.isStyleLoaded()) return null;
+  let point;
+  try {
+    point = map.project([lng, lat]);
+  } catch (e) {
+    return null;
+  }
+  const pad = 70;
+  let features;
+  try {
+    features = map.queryRenderedFeatures([
+      [point.x - pad, point.y - pad],
+      [point.x + pad, point.y + pad],
+    ]);
+  } catch (e) {
+    return null;
+  }
+
+  const cosLat = Math.cos((lat * Math.PI) / 180);
+  const px = lng * cosLat;
+  const py = lat;
+  let bestX = null;
+  let bestY = null;
+  let bestDistSq = Infinity;
+
+  for (const feature of features) {
+    // 'transportation' is the OpenMapTiles-schema source-layer this style's
+    // road network lives in, regardless of which visual layer (road,
+    // bridge, tunnel, by class) rendered a given feature.
+    if (feature.sourceLayer !== 'transportation' || !feature.geometry) continue;
+    const geom = feature.geometry;
+    const lines =
+      geom.type === 'LineString' ? [geom.coordinates] : geom.type === 'MultiLineString' ? geom.coordinates : null;
+    if (!lines) continue;
+    for (const line of lines) {
+      for (let i = 0; i < line.length - 1; i++) {
+        const ax = line[i][0] * cosLat;
+        const ay = line[i][1];
+        const bx = line[i + 1][0] * cosLat;
+        const by = line[i + 1][1];
+        const c = closestPointOnSegment(px, py, ax, ay, bx, by);
+        const dx = px - c.x;
+        const dy = py - c.y;
+        const distSq = dx * dx + dy * dy;
+        if (distSq < bestDistSq) {
+          bestDistSq = distSq;
+          bestX = c.x;
+          bestY = c.y;
+        }
+      }
+    }
+  }
+
+  if (bestX === null) return null;
+  const distMeters = Math.sqrt(bestDistSq) * METERS_PER_DEGREE;
+  // Off-road (parks, plazas, a road layer not loaded yet) — keep raw GPS
+  // rather than snapping to some unrelated road far away.
+  if (distMeters > MAX_SNAP_METERS) return null;
+  return [bestX / cosLat, bestY];
+}
+
 function handleLocation(msg) {
   const latitude = msg.latitude;
   const longitude = msg.longitude;
   const heading = msg.heading;
 
   ensureMap(longitude, latitude);
-  currentLngLat = [longitude, latitude];
+  const snapped = snapToRoad(longitude, latitude);
+  currentLngLat = snapped || [longitude, latitude];
   if (typeof heading === 'number' && heading >= 0) {
     currentHeadingRad = Math.PI + (heading * Math.PI) / 180;
   }
   if (map) {
     map.triggerRepaint();
     if (followEnabled) {
-      map.easeTo({ center: [longitude, latitude], duration: FOLLOW_EASE_MS, easing: (t) => t });
+      map.easeTo({ center: currentLngLat, duration: FOLLOW_EASE_MS, easing: (t) => t });
     }
   }
 
