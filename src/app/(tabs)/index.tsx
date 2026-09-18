@@ -1,0 +1,392 @@
+import { MapExplorer } from '@/components/MapExplorer';
+import * as Location from 'expo-location';
+import {
+  cacheDirectory,
+  makeDirectoryAsync,
+  readAsStringAsync,
+  writeAsStringAsync,
+  EncodingType,
+} from 'expo-file-system/legacy';
+import { Asset } from 'expo-asset';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, StyleSheet } from 'react-native';
+import { WebView, type WebViewMessageEvent } from 'react-native-webview';
+
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { fetchNearbyPetSpots, type PetSpot } from '@/services/petTourService';
+import { useMapStore } from '@/store/useMapStore';
+import { useCharacterStore, type CharacterType } from '@/store/useCharacterStore';
+import { useAchievements } from '@/features/achievements/AchievementProvider';
+import { MAP_HTML } from '@/web-map/map-html';
+
+// Exponential moving average weight applied to each raw GPS fix — lower
+// values smooth out more jitter at the cost of a little lag.
+const GPS_SMOOTHING_ALPHA = 0.35;
+
+// Re-fetch nearby pet-friendly spots once the user has walked roughly this
+// far (in degrees) from where they were last fetched, so the public API
+// isn't hit on every GPS tick. ~0.015deg is ~1.5km at Korea's latitudes.
+const SPOT_REFETCH_DISTANCE_DEG = 0.015;
+
+const CHARACTER_MODEL_MODULES: Record<CharacterType, number> = {
+  dog: require('../../../assets/models/maltese.glb'),
+  cat: require('../../../assets/models/cat.glb'),
+  fox: require('../../../assets/models/fox.glb'),
+};
+
+const WEB_MAP_DIR = `${cacheDirectory}web-map/`;
+
+// maplibre-gl and three.js/GLTFLoader are loaded by map-html.ts as local
+// files rather than from a CDN — network requests made *from inside* the
+// WebView never completed on this device/network (confirmed with an inline
+// fetch() probe that never resolved or rejected), regardless of CDN or
+// whether the page was loaded via source={{html}} or a file:// URI. Loading
+// these as local files sidesteps that entirely. Paths mirror each library's
+// own internal relative imports (GLTFLoader.js imports '../utils/...') so
+// nothing needs rewriting.
+//
+// maplibre-gl ships its files with a `.mjs` extension, which this WebView's
+// file:// resource loader serves with the wrong MIME type (text/html instead
+// of a JS type), and ES module scripts enforce strict MIME checking — this
+// silently broke maplibre's own worker (maplibre-gl-worker.mjs), which is
+// what actually parses/renders tiles, even though the main maplibre-gl.mjs
+// module itself loaded fine. Renamed to `.js` (same extension the working
+// three.js/GLTFLoader files already use) with the handful of internal
+// `.mjs` cross-references between these 3 files text-replaced to match.
+const WEB_LIB_ASSETS: { module: number; relativePath: string }[] = [
+  { module: require('../../../assets/web-libs/maplibre-gl.js.txt'), relativePath: 'maplibre-gl.js' },
+  { module: require('../../../assets/web-libs/maplibre-gl-shared.js.txt'), relativePath: 'maplibre-gl-shared.js' },
+  { module: require('../../../assets/web-libs/maplibre-gl.css.txt'), relativePath: 'maplibre-gl.css' },
+  { module: require('../../../assets/web-libs/three.module.js.txt'), relativePath: 'three.module.js' },
+  { module: require('../../../assets/web-libs/loaders/GLTFLoader.js.txt'), relativePath: 'loaders/GLTFLoader.js' },
+  {
+    module: require('../../../assets/web-libs/utils/BufferGeometryUtils.js.txt'),
+    relativePath: 'utils/BufferGeometryUtils.js',
+  },
+  { module: require('../../../assets/web-libs/utils/SkeletonUtils.js.txt'), relativePath: 'utils/SkeletonUtils.js' },
+];
+
+// maplibre-gl's own worker (maplibre-gl-worker.js) is loaded internally via
+// `new Worker(url, {type: 'module'})` — a different, stricter loading path
+// than <script type=module>/dynamic import(), which silently fails on this
+// WebView for file:// module workers ("non-JavaScript MIME type" in
+// DevTools, but no error ever reaches the Worker's own onerror — confirmed
+// by isolating the two loading paths directly). Bundled with esbuild into a
+// single dependency-free classic (non-module) script so the page can build
+// its own Blob URL with an explicit JS MIME type and hand that to
+// maplibregl.setWorkerUrl() instead of letting maplibre-gl construct a
+// file:// module Worker URL itself.
+const WORKER_BUNDLE_MODULE = require('../../../assets/web-libs/maplibre-gl-worker-bundled.js.txt');
+
+export default function MapScreen() {
+  const location = useMapStore((state) => state.location);
+  const heading = useMapStore((state) => state.heading);
+  const setLocation = useMapStore((state) => state.setLocation);
+  const permissionStatus = useMapStore((state) => state.permissionStatus);
+  const setPermissionStatus = useMapStore((state) => state.setPermissionStatus);
+  const character = useCharacterStore((state) => state.character);
+  const { recordNearbyLocation } = useAchievements();
+
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // A tick counter rather than a boolean: the WebView can reload on its own
+  // (Android recreating it under memory pressure, dev Fast Refresh, etc.),
+  // sending a second 'ready' message. Setting a boolean to `true` again is a
+  // same-value update React bails out of, so effects keyed on it would never
+  // re-fire and the reloaded page would sit stuck forever with no model,
+  // worker bundle, spots, or location ever resent to it. Each 'ready'
+  // bumping a counter guarantees a distinct value every time.
+  const [webviewReadyTick, setWebviewReadyTick] = useState(0);
+  const [modelDataUri, setModelDataUri] = useState<string | null>(null);
+  const [mapHtmlFileUri, setMapHtmlFileUri] = useState<string | null>(null);
+  const [workerCode, setWorkerCode] = useState<string | null>(null);
+  const [petSpots, setPetSpots] = useState<PetSpot[]>([]);
+
+  const webviewRef = useRef<WebView>(null);
+  const smoothedLocationRef = useRef<{ latitude: number; longitude: number } | null>(null);
+  const spotsFetchCenterRef = useRef<{ latitude: number; longitude: number } | null>(null);
+  const exploringMapRef = useRef(false);
+  const spotsRequestIdRef = useRef(0);
+
+  useEffect(() => {
+    let subscription: Location.LocationSubscription | undefined;
+
+    const applyPosition = (position: Location.LocationObject) => {
+      const raw = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+      const previous = smoothedLocationRef.current;
+      const smoothed = previous
+        ? {
+            latitude: previous.latitude + (raw.latitude - previous.latitude) * GPS_SMOOTHING_ALPHA,
+            longitude: previous.longitude + (raw.longitude - previous.longitude) * GPS_SMOOTHING_ALPHA,
+          }
+        : raw;
+      smoothedLocationRef.current = smoothed;
+      setLocation(smoothed, position.coords.heading);
+    };
+
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      setPermissionStatus(status);
+
+      if (status !== 'granted') {
+        setErrorMessage('위치 권한이 필요합니다.');
+        return;
+      }
+
+      // Render from the most recent cached fix immediately instead of waiting
+      // for a fresh high-accuracy GPS reading every time this screen mounts.
+      const lastKnownPosition = await Location.getLastKnownPositionAsync();
+      if (lastKnownPosition) applyPosition(lastKnownPosition);
+
+      subscription = await Location.watchPositionAsync(
+        {
+          // `BestForNavigation` can take a long time to produce the first fix,
+          // especially indoors and in the simulator. High accuracy is enough
+          // for walking while allowing the map to appear much sooner.
+          accuracy: Location.Accuracy.High,
+          timeInterval: 2000,
+          distanceInterval: 2,
+        },
+        applyPosition,
+      );
+    })();
+
+    return () => subscription?.remove();
+  }, [setLocation, setPermissionStatus]);
+
+  // The character model is bundled locally (never depends on network to
+  // render) and read once as base64 so it can be handed to the WebView's
+  // GLTFLoader as a data URI — the WebView has no access to the app's local
+  // asset filesystem otherwise. Re-runs whenever the user picks a different
+  // character on the My page so the new model gets loaded and resent (see
+  // the 'sending model' effect below, which fires on modelDataUri changing).
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      const asset = Asset.fromModule(CHARACTER_MODEL_MODULES[character]);
+      await asset.downloadAsync();
+      const uri = asset.localUri ?? asset.uri;
+      const base64 = await readAsStringAsync(uri, { encoding: EncodingType.Base64 });
+      if (!cancelled) setModelDataUri(`data:model/gltf-binary;base64,${base64}`);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [character]);
+
+  // Sent as plain text (not written to disk like WEB_LIB_ASSETS) so the page
+  // can build its own Blob with an explicit MIME type for maplibre-gl's
+  // worker — see WORKER_BUNDLE_MODULE above for why.
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      const asset = Asset.fromModule(WORKER_BUNDLE_MODULE);
+      await asset.downloadAsync();
+      const code = await readAsStringAsync(asset.localUri ?? asset.uri);
+      if (!cancelled) setWorkerCode(code);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Write map.html plus every local library file it depends on (see
+  // WEB_LIB_ASSETS above) into the same directory, then point the WebView at
+  // the file:// URI. A WebView loaded via source={{html}} also turned out to
+  // get treated as an opaque/restricted origin on this device (its own
+  // <script src="https://..."> CDN tags never loaded either), so this both
+  // fixes that and removes the CDN dependency entirely.
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      await makeDirectoryAsync(`${WEB_MAP_DIR}loaders`, { intermediates: true });
+      await makeDirectoryAsync(`${WEB_MAP_DIR}utils`, { intermediates: true });
+
+      await Promise.all(
+        WEB_LIB_ASSETS.map(async ({ module, relativePath }) => {
+          const asset = Asset.fromModule(module);
+          await asset.downloadAsync();
+          const content = await readAsStringAsync(asset.localUri ?? asset.uri);
+          await writeAsStringAsync(`${WEB_MAP_DIR}${relativePath}`, content);
+        }),
+      );
+
+      const uri = `${WEB_MAP_DIR}map.html`;
+      await writeAsStringAsync(uri, MAP_HTML);
+      if (!cancelled) setMapHtmlFileUri(uri);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const fetchSpotsAt = useCallback(
+    async (center: { latitude: number; longitude: number }, initiatedByMap = false) => {
+      const requestId = ++spotsRequestIdRef.current;
+      spotsFetchCenterRef.current = center;
+      try {
+        const spots = await fetchNearbyPetSpots(center.latitude, center.longitude);
+        if (requestId === spotsRequestIdRef.current) setPetSpots(spots);
+        if (initiatedByMap) webviewRef.current?.postMessage(JSON.stringify({ type: 'searchComplete', success: true }));
+      } catch (error) {
+        console.warn('[petTour] fetch failed', error);
+        if (initiatedByMap) webviewRef.current?.postMessage(JSON.stringify({ type: 'searchComplete', success: false }));
+      }
+    },
+    [],
+  );
+
+  const handleMessage = useCallback(
+    (event: WebViewMessageEvent) => {
+      let message: { type?: string; text?: string; latitude?: number; longitude?: number };
+      try {
+        message = JSON.parse(event.nativeEvent.data);
+      } catch {
+        console.warn('[webview] unparseable message', event.nativeEvent.data);
+        return;
+      }
+      console.warn('[webview]', message.type, message.text ?? '');
+      if (message.type === 'ready') setWebviewReadyTick((tick) => tick + 1);
+      if (message.type === 'searchArea' && typeof message.latitude === 'number' && Number.isFinite(message.latitude) && typeof message.longitude === 'number' && Number.isFinite(message.longitude)) {
+        exploringMapRef.current = true;
+        void fetchSpotsAt({ latitude: message.latitude, longitude: message.longitude }, true);
+      }
+    },
+    [fetchSpotsAt],
+  );
+
+  const handleViewSpot = useCallback((spot: PetSpot) => {
+    webviewRef.current?.postMessage(JSON.stringify({
+      type: 'focusSpot',
+      id: spot.id,
+      latitude: spot.latitude,
+      longitude: spot.longitude,
+    }));
+  }, []);
+
+  const handleGoToCurrentLocation = useCallback(() => {
+    if (!location) return;
+    exploringMapRef.current = false;
+    webviewRef.current?.postMessage(JSON.stringify({
+      type: 'recenter',
+      latitude: location.latitude,
+      longitude: location.longitude,
+    }));
+    void fetchSpotsAt(location);
+  }, [fetchSpotsAt, location]);
+
+  // Send the model once the page signals it's ready to receive it.
+  useEffect(() => {
+    console.warn('[rn] model effect', { webviewReadyTick, hasModel: !!modelDataUri });
+    if (!webviewReadyTick || !modelDataUri) return;
+    console.warn('[rn] sending model, length', modelDataUri.length);
+    webviewRef.current?.postMessage(JSON.stringify({ type: 'model', dataUri: modelDataUri }));
+  }, [webviewReadyTick, modelDataUri]);
+
+  // Send maplibre's worker bundle as raw text so the page can build its own
+  // Blob URL for it (see WORKER_BUNDLE_MODULE above).
+  useEffect(() => {
+    if (!webviewReadyTick || !workerCode) return;
+    console.warn('[rn] sending worker code, length', workerCode.length);
+    webviewRef.current?.postMessage(JSON.stringify({ type: 'workerCode', code: workerCode }));
+  }, [webviewReadyTick, workerCode]);
+
+  // Fetch nearby pet-friendly tourism spots (한국관광공사 KorPetTourService2)
+  // around the user's current location, re-fetching only once they've moved
+  // far enough that the previous result set is stale.
+  useEffect(() => {
+    if (!location || exploringMapRef.current) return;
+    const lastCenter = spotsFetchCenterRef.current;
+    const moved =
+      !lastCenter ||
+      Math.hypot(location.latitude - lastCenter.latitude, location.longitude - lastCenter.longitude) >
+        SPOT_REFETCH_DISTANCE_DEG;
+    if (!moved) return;
+
+    void fetchSpotsAt(location);
+  }, [fetchSpotsAt, location]);
+
+  // Forward fetched spots into the page as they arrive/update.
+  useEffect(() => {
+    if (!webviewReadyTick) return;
+    webviewRef.current?.postMessage(JSON.stringify({ type: 'spots', spots: petSpots }));
+  }, [webviewReadyTick, petSpots]);
+
+  // Forward every smoothed GPS fix into the page — this is the only way the
+  // character's position changes; the WebView never touches
+  // navigator.geolocation itself.
+  useEffect(() => {
+    console.warn('[rn] location effect', { webviewReadyTick, location });
+    if (!webviewReadyTick || !location) return;
+    console.warn('[rn] sending location', location, heading);
+    webviewRef.current?.postMessage(
+      JSON.stringify({ type: 'location', latitude: location.latitude, longitude: location.longitude, heading }),
+    );
+  }, [webviewReadyTick, location, heading]);
+
+  useEffect(() => {
+    if (!location || petSpots.length === 0) return;
+    void recordNearbyLocation(location.latitude, location.longitude, petSpots);
+  }, [location, petSpots, recordNearbyLocation]);
+
+  // WebView treats a new `source` object as a navigation and reloads the
+  // page — without memoizing this, every re-render (e.g. each GPS fix)
+  // handed it a fresh object and reset the page before it ever got past the
+  // initial handshake.
+  const webviewSource = useMemo(
+    () => (mapHtmlFileUri ? { uri: mapHtmlFileUri } : undefined),
+    [mapHtmlFileUri],
+  );
+
+  if (permissionStatus !== 'granted') {
+    return (
+      <MapExplorer spots={petSpots}><ThemedView style={styles.center}>
+        <ThemedText>{errorMessage ?? '위치 권한을 요청하는 중...'}</ThemedText>
+      </ThemedView></MapExplorer>
+    );
+  }
+
+  if (!location || !mapHtmlFileUri) {
+    return (
+      <MapExplorer spots={petSpots}><ThemedView style={styles.center}>
+        <ActivityIndicator />
+      </ThemedView></MapExplorer>
+    );
+  }
+
+  return (
+    <MapExplorer spots={petSpots} onViewSpot={handleViewSpot} onGoToCurrentLocation={handleGoToCurrentLocation}><WebView
+      ref={webviewRef}
+      style={styles.map}
+      source={webviewSource}
+      originWhitelist={['*']}
+      javaScriptEnabled
+      allowFileAccess
+      allowFileAccessFromFileURLs
+      allowUniversalAccessFromFileURLs
+      webviewDebuggingEnabled
+      onMessage={handleMessage}
+      onError={(e) => console.warn('[webview] onError', e.nativeEvent)}
+      onHttpError={(e) => console.warn('[webview] onHttpError', e.nativeEvent)}
+      onRenderProcessGone={(e) => console.warn('[webview] onRenderProcessGone', e.nativeEvent)}
+    /></MapExplorer>
+  );
+}
+
+const styles = StyleSheet.create({
+  map: {
+    flex: 1,
+  },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+});

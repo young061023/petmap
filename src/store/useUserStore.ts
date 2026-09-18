@@ -1,10 +1,14 @@
 import { create } from 'zustand';
-import type { AppUser } from '@/src/types/user';
 
-type UserState = {
-  user: AppUser | null;
-  setUser: (user: AppUser | null) => void;
-};
+interface User {
+  id: string;
+  email: string | null;
+}
+
+interface UserState {
+  user: User | null;
+  setUser: (user: User | null) => void;
+}
 
 export const useUserStore = create<UserState>((set) => ({
   user: null,

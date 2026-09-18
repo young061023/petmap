@@ -1,0 +1,9 @@
+import { StyleSheet, Text, View } from 'react-native';
+import { Target } from 'lucide-react-native';
+import { MissionProgressBar } from './MissionProgressBar';
+import { missionColors as c } from '@/constants/missionTheme';
+
+export function MissionOverview({ streakDays, completedCount, totalCount }: { streakDays: number; completedCount: number; totalCount: number }) {
+  return <View style={styles.container}><Text style={styles.title}>오늘의 미션</Text><Text style={styles.subtitle}>함께하는 하루, 작은 목표부터</Text><View style={styles.summary}><Target size={40} color={c.primary} /><View style={styles.copy}><View style={styles.row}><Text style={styles.count}>{completedCount} / {totalCount}<Text style={styles.complete}> 완료</Text></Text></View><MissionProgressBar value={totalCount ? completedCount / totalCount : 0} accessibilityLabel={`오늘의 미션 ${totalCount}개 중 ${completedCount}개 완료`} color={c.primaryFill} trackColor={c.border} /><Text style={styles.streak}>연속 달성 {streakDays}일</Text></View></View></View>;
+}
+const styles = StyleSheet.create({ container: { paddingHorizontal: 20, paddingTop: 28 }, title: { fontSize: 32, fontWeight: '800', color: c.foreground }, subtitle: { marginTop: 8, fontSize: 14, color: c.body }, summary: { marginTop: 24, padding: 20, borderRadius: 20, backgroundColor: c.primaryWeak, flexDirection: 'row', alignItems: 'center', gap: 18 }, copy: { flex: 1, gap: 12 }, row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }, count: { color: c.foreground, fontSize: 25, fontWeight: '800' }, complete: { fontSize: 14, fontWeight: '600' }, streak: { fontSize: 11, color: c.body } });
