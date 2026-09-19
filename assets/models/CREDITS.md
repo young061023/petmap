@@ -16,9 +16,10 @@ Attribution, which requires this attribution notice to be kept with the app.
 
 ## dog.glb
 
-- **Model**: "Labrador Dog"
-- **Author**: kenchoo (https://sketchfab.com/kenchoo)
-- **Source**: https://sketchfab.com/3d-models/labrador-dog-1f56cfbab07e4fe49b5d9e521c82073a
+- **Model**: "Dog Puppy"
+- **Author**: kenchoo (https://sketchfab.com/kenchoo), a rigged/animated
+  derivative of "3d dog cute" by Tech developers (https://skfb.ly/6WMyH)
+- **Source**: https://sketchfab.com/3d-models/dog-puppy-72331763040e4314b154f84348fe0957
 - **License**: CC-BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
 
 ## cat.glb
