@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Clock, ImageIcon, FileText, MapPin } from 'lucide-react-native';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -13,6 +14,21 @@ function RecordMedia({ media }: { media: LocalRecordMedia }) {
     instance.muted = true;
     instance.play();
   });
+
+  // Opening the camera to record a new clip claims the device's shared
+  // AV session and iOS pauses every other active player (including these
+  // list previews) for the duration — they don't resume on their own once
+  // the camera session ends, which is why only the just-recorded clip kept
+  // looping and every earlier one froze. Self-heal: any time this player
+  // reports it stopped, and it wasn't told to, start it again.
+  useEffect(() => {
+    if (media.type !== 'video') return;
+    const subscription = player.addListener('playingChange', (event) => {
+      if (!event.isPlaying) player.play();
+    });
+    return () => subscription.remove();
+  }, [media.type, player]);
+
   if (media.type === 'photo') return <Image source={{ uri: media.uri }} style={styles.photo} resizeMode="cover" />;
   return <VideoView player={player} style={styles.photo} contentFit="cover" nativeControls={false} pointerEvents="none" />;
 }
