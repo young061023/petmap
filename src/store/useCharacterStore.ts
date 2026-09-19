@@ -12,7 +12,7 @@ interface CharacterState {
 export const useCharacterStore = create<CharacterState>()(
   persist(
     (set) => ({
-      character: 'dog',
+      character: 'cat',
       setCharacter: (character) => set({ character }),
     }),
     {
