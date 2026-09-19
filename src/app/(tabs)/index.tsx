@@ -9,7 +9,7 @@ import {
 } from 'expo-file-system/legacy';
 import { Asset } from 'expo-asset';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet } from 'react-native';
+import { ActivityIndicator, StyleSheet, Vibration } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 import { ThemedText } from '@/components/themed-text';
@@ -55,16 +55,12 @@ const WEB_MAP_DIR = `${cacheDirectory}web-map/`;
 // three.js/GLTFLoader files already use) with the handful of internal
 // `.mjs` cross-references between these 3 files text-replaced to match.
 const WEB_LIB_ASSETS: { module: number; relativePath: string }[] = [
-  { module: require('../../../assets/web-libs/maplibre-gl.js.txt'), relativePath: 'maplibre-gl.js' },
-  { module: require('../../../assets/web-libs/maplibre-gl-shared.js.txt'), relativePath: 'maplibre-gl-shared.js' },
   { module: require('../../../assets/web-libs/maplibre-gl.css.txt'), relativePath: 'maplibre-gl.css' },
-  { module: require('../../../assets/web-libs/three.module.js.txt'), relativePath: 'three.module.js' },
-  { module: require('../../../assets/web-libs/loaders/GLTFLoader.js.txt'), relativePath: 'loaders/GLTFLoader.js' },
-  {
-    module: require('../../../assets/web-libs/utils/BufferGeometryUtils.js.txt'),
-    relativePath: 'utils/BufferGeometryUtils.js',
-  },
-  { module: require('../../../assets/web-libs/utils/SkeletonUtils.js.txt'), relativePath: 'utils/SkeletonUtils.js' },
+  // maplibre-gl/three/GLTFLoader are pre-bundled into this single classic
+  // script by scripts/bundle-map-script.sh — see main-map-script.js and
+  // map-html.ts's <script src="./main-map-bundled.js"> for why (WKWebView
+  // on iOS doesn't support <script type="module"> for file:// pages).
+  { module: require('../../../assets/web-libs/main-map-bundled.js.txt'), relativePath: 'main-map-bundled.js' },
 ];
 
 // maplibre-gl's own worker (maplibre-gl-worker.js) is loaded internally via
@@ -204,8 +200,7 @@ export default function MapScreen() {
     let cancelled = false;
 
     (async () => {
-      await makeDirectoryAsync(`${WEB_MAP_DIR}loaders`, { intermediates: true });
-      await makeDirectoryAsync(`${WEB_MAP_DIR}utils`, { intermediates: true });
+      await makeDirectoryAsync(WEB_MAP_DIR, { intermediates: true });
 
       await Promise.all(
         WEB_LIB_ASSETS.map(async ({ module, relativePath }) => {
@@ -253,6 +248,12 @@ export default function MapScreen() {
       }
       console.warn('[webview]', message.type, message.text ?? '');
       if (message.type === 'ready') setWebviewReadyTick((tick) => tick + 1);
+      // A short tick confirming the one-finger long-press has taken hold and
+      // rotate mode is now active — see setupOneFingerRotate in
+      // main-map-script.js. A single native Vibration.vibrate() call needs
+      // no extra native module (unlike expo-haptics), so it works without a
+      // rebuild.
+      if (message.type === 'rotateEngaged') Vibration.vibrate(15);
       if (message.type === 'searchArea' && typeof message.latitude === 'number' && Number.isFinite(message.latitude) && typeof message.longitude === 'number' && Number.isFinite(message.longitude)) {
         exploringMapRef.current = true;
         void fetchSpotsAt({ latitude: message.latitude, longitude: message.longitude }, true);
@@ -370,6 +371,13 @@ export default function MapScreen() {
       allowFileAccess
       allowFileAccessFromFileURLs
       allowUniversalAccessFromFileURLs
+      // iOS-only: without this, WKWebView's loadFileURL grants read access to
+      // just the loaded HTML file itself (see RNCWebViewImpl.m), so every
+      // sibling resource (maplibre-gl.css, main-map-bundled.js) written next
+      // to it 404s. allowFileAccess/allowFileAccessFromFileURLs/
+      // allowUniversalAccessFromFileURLs above are Android-only and don't
+      // cover this.
+      allowingReadAccessToURL={WEB_MAP_DIR}
       webviewDebuggingEnabled
       onMessage={handleMessage}
       onError={(e) => console.warn('[webview] onError', e.nativeEvent)}

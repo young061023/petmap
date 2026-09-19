@@ -7,7 +7,7 @@ export function Puppy({ size = 64 }: { size?: number }) {
 }
 
 export function ExplorerBrand({ label = '반려견과 로컬 여행' }: { label?: string }) {
-  return <View style={styles.brand}><View style={styles.wordmark}><Text style={styles.logo}>PetMap</Text><PawPrint size={14} color={colors.primary} /></View><View style={styles.destination}><Puppy size={28} /><Text style={styles.label}>{label}</Text></View></View>;
+  return <View style={styles.brand}><View style={styles.wordmark}><Text style={styles.logo}>PetMap</Text><PawPrint size={14} color={colors.primary} /></View><View style={styles.destination}><Puppy size={28} />{label ? <Text style={styles.label}>{label}</Text> : null}</View></View>;
 }
 export function ExplorerGuide({ title, subtitle }: { title: string; subtitle: string }) {
   return <View style={styles.guide}><Puppy size={76} /><View style={styles.guideCopy}><Text style={styles.guideTitle}>{title}</Text><Text style={styles.guideSub}>{subtitle}</Text></View></View>;

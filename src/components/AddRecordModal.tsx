@@ -1,4 +1,5 @@
 import React, { Fragment, useEffect, useState } from 'react';
+import * as Location from 'expo-location';
 import {
   Image,
   Modal,
@@ -11,7 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { X, Plus, Clock, MapPin, Tag, Camera, Video } from 'lucide-react-native';
+import { X, Plus, Tag, Camera, Video } from 'lucide-react-native';
 import { ActivityCategory, type LocalRecordMedia } from '../types/record';
 import { theme } from '../theme/theme';
 import { RecordCameraModal } from './RecordCameraModal';
@@ -39,20 +40,54 @@ export const AddRecordModal: React.FC<AddRecordModalProps> = ({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<ActivityCategory>('산책');
-  const [location, setLocation] = useState('');
+  const [location, setLocation] = useState<string | null>(null);
   const [media, setMedia] = useState<LocalRecordMedia | undefined>();
   const [cameraVisible, setCameraVisible] = useState(false);
-  const [time, setTime] = useState(() => {
+  const [time, setTime] = useState('');
+
+  // Time and location are captured automatically the moment the sheet opens
+  // (rather than typed in) — a walk record should reflect where/when it
+  // actually happened, not require the user to remember and type it.
+  useEffect(() => {
+    if (!visible) {
+      setCameraVisible(false);
+      return;
+    }
+
     const now = new Date();
     const hours = now.getHours();
     const mins = now.getMinutes().toString().padStart(2, '0');
     const ampm = hours >= 12 ? 'PM' : 'AM';
     const formattedHours = (hours % 12 || 12).toString().padStart(2, '0');
-    return `${formattedHours}:${mins} ${ampm}`;
-  });
+    setTime(`${formattedHours}:${mins} ${ampm}`);
 
-  useEffect(() => {
-    if (!visible) setCameraVisible(false);
+    setLocation(null);
+    let cancelled = false;
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') return;
+        const position =
+          (await Location.getLastKnownPositionAsync()) ?? (await Location.getCurrentPositionAsync());
+        if (!position) return;
+        const [place] = await Location.reverseGeocodeAsync({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        if (cancelled || !place) return;
+        const label = [place.city ?? place.region, place.district, place.street]
+          .filter((part): part is string => !!part)
+          .join(' ');
+        if (label) setLocation(label);
+      } catch {
+        // Location is a nice-to-have on the record, not a requirement —
+        // leave it blank rather than blocking or erroring the sheet.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [visible]);
 
   const handleSave = () => {
@@ -62,13 +97,12 @@ export const AddRecordModal: React.FC<AddRecordModalProps> = ({
       description: description.trim(),
       category,
       time,
-      location: location.trim() || undefined,
+      location: location ?? undefined,
       media,
     });
     // Reset state
     setTitle('');
     setDescription('');
-    setLocation('');
     setMedia(undefined);
     onClose();
   };
@@ -165,33 +199,10 @@ export const AddRecordModal: React.FC<AddRecordModalProps> = ({
               </Pressable>
             )}
 
-            {/* Time & Location Row */}
-            <View style={styles.rowTwo}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.label}>
-                  <Clock size={13} color={theme.colors.textSub} /> 시간
-                </Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="예: 09:30 AM"
-                  placeholderTextColor={theme.colors.textLight}
-                  value={time}
-                  onChangeText={setTime}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.label}>
-                  <MapPin size={13} color={theme.colors.textSub} /> 장소 (선택)
-                </Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="예: 한강 공원"
-                  placeholderTextColor={theme.colors.textLight}
-                  value={location}
-                  onChangeText={setLocation}
-                />
-              </View>
-            </View>
+            {/* Time & location are captured silently (see the effect above)
+                and only surface later on the saved record itself — nothing
+                to show or edit here keeps this sheet focused on the parts
+                the user actually fills in. */}
 
             {/* Description Input */}
             <Text style={styles.label}>상세 메모 / 추억 이야기</Text>
@@ -318,10 +329,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.colors.textMain,
     marginBottom: 4,
-  },
-  rowTwo: {
-    flexDirection: 'row',
-    gap: 12,
   },
   multilineInput: {
     minHeight: 70,
