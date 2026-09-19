@@ -155,6 +155,14 @@ const characterLayer = {
     characterGroup.rotation.y = currentHeadingRad;
 
     this.renderer.resetState();
+    // The map's own tile/building-extrusion pass already wrote depth values
+    // for this frame into the shared GL context (autoClear is off so we can
+    // draw over the map without erasing it) — clearing just the depth buffer
+    // here guarantees the character always wins against building extrusions
+    // behind it, while leaving normal depth test/write enabled on its own
+    // materials so the model's own parts (e.g. an eyeball mesh in front of
+    // the head) still sort correctly against each other.
+    this.renderer.clearDepth();
     this.renderer.render(this.scene, this.camera);
     map.triggerRepaint();
   },
@@ -169,36 +177,36 @@ function loadModel(dataUri) {
     dataUri,
     (gltf) => {
       const model = gltf.scene;
-      // The character model's raw scene units are huge (tens-to-hundreds of
-      // units tall) — matches the native version's <Center scale={0.02}>.
-      // Measure the box in the
-      // model's original (unscaled) space first, then scale, then position
-      // using offsets scaled to match — Box3 reads the object's last-computed
-      // world matrix, which doesn't retroactively reflect a scale set just
+      // Different sources export wildly different raw scene units — the
+      // fox (a Khronos sample) is modeled tens-to-hundreds of units tall,
+      // while the CC-BY dog/cat models are near real-world (~1-7 unit)
+      // scale. A fixed literal scale factor tuned for one blows the others
+      // up or (as happened here) shrinks them to nearly nothing. Measure
+      // the box in the model's original (unscaled) space and derive the
+      // scale from its actual height so every model ends up the same
+      // apparent size — Box3 reads the object's last-computed world
+      // matrix, which doesn't retroactively reflect a scale set just
       // before measuring without an explicit updateMatrixWorld() call, so
       // measure-then-scale is more robust than scale-then-measure here.
-      const CHARACTER_SCALE = 0.02;
+      const TARGET_MODEL_HEIGHT = 1.58; // matches the fox's old fixed 0.02 scale (79 raw units tall)
       const box = new THREE.Box3().setFromObject(model);
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
-      model.scale.setScalar(CHARACTER_SCALE);
-      model.position.set(-center.x * CHARACTER_SCALE, -box.min.y * CHARACTER_SCALE, -center.z * CHARACTER_SCALE);
+      const characterScale = size.y > 0 ? TARGET_MODEL_HEIGHT / size.y : 0.02;
+      model.scale.setScalar(characterScale);
+      model.position.set(-center.x * characterScale, -box.min.y * characterScale, -center.z * characterScale);
       // The character stands at ground level at the exact map center, which
       // is frequently inside or behind a 3D building extrusion from the
-      // 'liberty' style's fill-extrusion layer — those write to the shared
-      // GL depth buffer, and Three's default depth test then discards the
-      // character's fragments behind them. A "you are here" marker should
-      // never be hidden by buildings, so draw it depth-test-free (always on
-      // top, like every other map app's location dot).
-      model.traverse((node) => {
-        if (!node.isMesh) return;
-        const materials = Array.isArray(node.material) ? node.material : [node.material];
-        materials.forEach((mat) => {
-          mat.depthTest = false;
-          mat.depthWrite = false;
-        });
-        node.renderOrder = 999;
-      });
+      // 'liberty' style's fill-extrusion layer. That used to be handled by
+      // disabling depth test/write on every material so the character always
+      // won — but that also disables correct depth sorting *within* the
+      // character's own mesh (e.g. the cat model's separate eyeball mesh got
+      // overdrawn by its head mesh depending on scene-graph order, since
+      // "always draw on top" no longer distinguished near from far). Always
+      // winning against buildings is now done once per frame by clearing the
+      // depth buffer right before this scene renders (see characterLayer's
+      // render()), so materials here keep normal depth test/write and sort
+      // correctly against each other.
       // loadModel can run more than once against the same still-live scene
       // (e.g. the RN side resending 'model' after a WebView reload it can't
       // always distinguish from an in-place refresh) — without clearing the
@@ -209,8 +217,12 @@ function loadModel(dataUri) {
       post({ type: 'debug', text: 'model added, rawSize=' + size.x.toFixed(1) + ',' + size.y.toFixed(1) + ',' + size.z.toFixed(1) + ' childCount=' + characterGroup.children.length });
 
       mixer = new THREE.AnimationMixer(model);
-      const idleClip = THREE.AnimationClip.findByName(gltf.animations, IDLE_CLIP);
-      const walkClip = THREE.AnimationClip.findByName(gltf.animations, WALK_CLIP);
+      // Not every character model has clips actually named 'Survey'/'Walk'
+      // (e.g. the CC-BY cat/dog models each ship a single generic clip like
+      // 'Animation') — fall back to whatever clip the model does have so it
+      // still animates instead of standing frozen.
+      const idleClip = THREE.AnimationClip.findByName(gltf.animations, IDLE_CLIP) || gltf.animations[0] || null;
+      const walkClip = THREE.AnimationClip.findByName(gltf.animations, WALK_CLIP) || gltf.animations[0] || null;
       actions = {
         idle: idleClip ? mixer.clipAction(idleClip) : null,
         walk: walkClip ? mixer.clipAction(walkClip) : null,

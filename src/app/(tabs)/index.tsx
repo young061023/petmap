@@ -30,7 +30,7 @@ const GPS_SMOOTHING_ALPHA = 0.35;
 const SPOT_REFETCH_DISTANCE_DEG = 0.015;
 
 const CHARACTER_MODEL_MODULES: Record<CharacterType, number> = {
-  dog: require('../../../assets/models/maltese.glb'),
+  dog: require('../../../assets/models/dog.glb'),
   cat: require('../../../assets/models/cat.glb'),
   fox: require('../../../assets/models/fox.glb'),
 };

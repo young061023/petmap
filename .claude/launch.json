@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "petmap-web",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["expo", "start", "--web"],
+      "port": 8081
+    },
+    {
+      "name": "petmap-dev-client",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["expo", "start", "--dev-client"],
+      "port": 8081
+    }
+  ]
+}

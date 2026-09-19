@@ -1,6 +1,6 @@
 "use strict";
 (() => {
-  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.IKoTjS8SZv/maplibre-gl-shared.js
+  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.Zhlmczbl9u/maplibre-gl-shared.js
   var e = Object.create;
   var t = Object.defineProperty;
   var n = Object.getOwnPropertyDescriptor;
@@ -11289,7 +11289,7 @@ Use an identity property function instead: \`{ "type": "identity", "property": $
     return `center`;
   }
 
-  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.IKoTjS8SZv/maplibre-gl.js
+  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.Zhlmczbl9u/maplibre-gl.js
   var import_meta = {};
   var Ar2 = `6.4.0`;
   function jr2() {
@@ -23283,7 +23283,7 @@ ${s37.shaderPreludeCode.vertexSource}`, define: s37.shaderDefine }, defaultProje
     vn.WORKER_URL = e63;
   }
 
-  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.IKoTjS8SZv/three.module.js
+  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.Zhlmczbl9u/three.module.js
   var Pf3 = 0;
   var Tu3 = 1;
   var Lf2 = 2;
@@ -39259,7 +39259,7 @@ void main() {
     }
   };
 
-  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.IKoTjS8SZv/utils/BufferGeometryUtils.js
+  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.Zhlmczbl9u/utils/BufferGeometryUtils.js
   function toTrianglesDrawMode(geometry, drawMode) {
     if (drawMode === Mm2) {
       console.warn("THREE.BufferGeometryUtils.toTrianglesDrawMode(): Geometry already defined as triangles.");
@@ -39315,7 +39315,7 @@ void main() {
     }
   }
 
-  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.IKoTjS8SZv/utils/SkeletonUtils.js
+  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.Zhlmczbl9u/utils/SkeletonUtils.js
   function clone(source) {
     const sourceLookup = /* @__PURE__ */ new Map();
     const cloneLookup = /* @__PURE__ */ new Map();
@@ -39345,7 +39345,7 @@ void main() {
     }
   }
 
-  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.IKoTjS8SZv/loaders/GLTFLoader.js
+  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.Zhlmczbl9u/loaders/GLTFLoader.js
   var GLTFLoader = class extends Ge2 {
     /**
      * Constructs a new glTF loader.
@@ -41985,6 +41985,7 @@ void main() {
       this.camera.projectionMatrix = m2.multiply(l2);
       characterGroup.rotation.y = currentHeadingRad;
       this.renderer.resetState();
+      this.renderer.clearDepth();
       this.renderer.render(this.scene, this.camera);
       map.triggerRepaint();
     }
@@ -41998,27 +41999,19 @@ void main() {
       dataUri,
       (gltf) => {
         const model = gltf.scene;
-        const CHARACTER_SCALE = 0.02;
+        const TARGET_MODEL_HEIGHT = 1.58;
         const box = new Ue2().setFromObject(model);
         const center = box.getCenter(new C2());
         const size = box.getSize(new C2());
-        model.scale.setScalar(CHARACTER_SCALE);
-        model.position.set(-center.x * CHARACTER_SCALE, -box.min.y * CHARACTER_SCALE, -center.z * CHARACTER_SCALE);
-        model.traverse((node) => {
-          if (!node.isMesh) return;
-          const materials = Array.isArray(node.material) ? node.material : [node.material];
-          materials.forEach((mat) => {
-            mat.depthTest = false;
-            mat.depthWrite = false;
-          });
-          node.renderOrder = 999;
-        });
+        const characterScale = size.y > 0 ? TARGET_MODEL_HEIGHT / size.y : 0.02;
+        model.scale.setScalar(characterScale);
+        model.position.set(-center.x * characterScale, -box.min.y * characterScale, -center.z * characterScale);
         while (characterGroup.children.length) characterGroup.remove(characterGroup.children[0]);
         characterGroup.add(model);
         post({ type: "debug", text: "model added, rawSize=" + size.x.toFixed(1) + "," + size.y.toFixed(1) + "," + size.z.toFixed(1) + " childCount=" + characterGroup.children.length });
         mixer = new Jh(model);
-        const idleClip = ji3.findByName(gltf.animations, IDLE_CLIP);
-        const walkClip = ji3.findByName(gltf.animations, WALK_CLIP);
+        const idleClip = ji3.findByName(gltf.animations, IDLE_CLIP) || gltf.animations[0] || null;
+        const walkClip = ji3.findByName(gltf.animations, WALK_CLIP) || gltf.animations[0] || null;
         actions = {
           idle: idleClip ? mixer.clipAction(idleClip) : null,
           walk: walkClip ? mixer.clipAction(walkClip) : null
