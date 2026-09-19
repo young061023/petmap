@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     backgroundColor: missionColors.surface,
   },
   segment: {
-    minHeight: 44,
+    minHeight: 38,
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     borderRadius: missionRadius.control,
   },
   compactSegment: {
-    minHeight: 38,
+    minHeight: 33,
   },
   selectedSegment: {
     backgroundColor: missionColors.primaryFill,
@@ -80,11 +80,11 @@ const styles = StyleSheet.create({
   },
   label: {
     color: missionColors.muted,
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '600',
   },
   compactLabel: {
-    fontSize: 14,
+    fontSize: 12,
   },
   selectedLabel: {
     color: missionColors.foreground,
