@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Clock, ImageIcon, FileText, MapPin } from 'lucide-react-native';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { AppState, Image, StyleSheet, Text, View } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { colors } from '@/constants/theme';
 import type { LocalRecordMedia, TimelineActivity } from '@/types/record';
@@ -21,12 +21,30 @@ function RecordMedia({ media }: { media: LocalRecordMedia }) {
   // the camera session ends, which is why only the just-recorded clip kept
   // looping and every earlier one froze. Self-heal: any time this player
   // reports it stopped, and it wasn't told to, start it again.
+  //
+  // That listener alone still missed one case: if this screen is mounted
+  // (or the app is foregrounded) while the AV session is still busy, the
+  // initial play() from useVideoPlayer's setup can silently no-op — the
+  // player never transitions from playing to paused, it just never starts,
+  // so there's no playingChange event to react to. Cover that by also
+  // retrying once the source has actually loaded (readyToPlay) and every
+  // time the app comes back to the foreground.
   useEffect(() => {
     if (media.type !== 'video') return;
-    const subscription = player.addListener('playingChange', (event) => {
+    const playingSubscription = player.addListener('playingChange', (event) => {
       if (!event.isPlaying) player.play();
     });
-    return () => subscription.remove();
+    const statusSubscription = player.addListener('statusChange', (event) => {
+      if (event.status === 'readyToPlay') player.play();
+    });
+    const appStateSubscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') player.play();
+    });
+    return () => {
+      playingSubscription.remove();
+      statusSubscription.remove();
+      appStateSubscription.remove();
+    };
   }, [media.type, player]);
 
   if (media.type === 'photo') return <Image source={{ uri: media.uri }} style={styles.photo} resizeMode="cover" />;
