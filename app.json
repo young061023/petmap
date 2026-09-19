@@ -35,6 +35,8 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "./plugins/withAndroidReleaseHardening.js",
+      "./plugins/withKoreanPathBuildFix.js",
       "expo-router",
       [
         "expo-splash-screen",
