@@ -23,6 +23,10 @@ function post(message) {
 const BASE_ZOOM = 18;
 const IDLE_CLIP = 'Survey';
 const WALK_CLIP = 'Walk';
+// Some character models' baked "Walk" clip reads as a full sprint at its
+// native 1.0 speed (most noticeably the fox) — slowed down so it reads as an
+// actual walking pace instead.
+const WALK_TIME_SCALE = 0.55;
 const CROSSFADE_SECONDS = 0.3;
 // Pokémon GO-style camera: re-center on the character on every GPS fix
 // (fixes arrive ~every 2s, so a short ease never overlaps the next one).
@@ -211,6 +215,7 @@ function loadModel(dataUri) {
         idle: idleClip ? mixer.clipAction(idleClip) : null,
         walk: walkClip ? mixer.clipAction(walkClip) : null,
       };
+      if (actions.walk) actions.walk.timeScale = WALK_TIME_SCALE;
       setClip('idle');
       modelLoaded = true;
       setStatus('');

@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Plus } from 'lucide-react-native';
+import { ChevronRight, Plus } from 'lucide-react-native';
 import { colors } from '@/constants/theme';
 import { TravelRecordList } from '@/components/TravelRecordList';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AddRecordModal } from '@/components/AddRecordModal';
 import { MissionsModal } from '@/components/MissionsModal';
+import { MonthlyCalendarModal } from '@/components/MonthlyCalendarModal';
 import { PetNameModal } from '@/components/PetNameModal';
-import { WeeklyCalendar } from '@/components/WeeklyCalendar';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useMissions } from '@/features/missions/MissionProvider';
 import { useAchievements } from '@/features/achievements/AchievementProvider';
@@ -23,6 +23,11 @@ function formatDateString(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+const WEEKDAY_KOR = ['일', '월', '화', '수', '목', '금', '토'];
+function formatDateLabel(date: Date): string {
+  return `${date.getMonth() + 1}월 ${date.getDate()}일 (${WEEKDAY_KOR[date.getDay()]})`;
+}
+
 export default function RecordsScreen() {
   const { profile, updatePetName } = useAuth();
   const { missions: dashboardMissions, setCompleted } = useMissions();
@@ -33,6 +38,7 @@ export default function RecordsScreen() {
   const [petModalVisible, setPetModalVisible] = useState(false);
   const [missionsModalVisible, setMissionsModalVisible] = useState(false);
   const [addRecordModalVisible, setAddRecordModalVisible] = useState(false);
+  const [calendarModalVisible, setCalendarModalVisible] = useState(false);
 
   const loadData = useCallback(async () => {
     const date = formatDateString(selectedDate);
@@ -83,8 +89,13 @@ export default function RecordsScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <View style={styles.container}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.heading}><Pressable accessibilityRole="button" accessibilityLabel="기록 추가" style={styles.add} onPress={() => setAddRecordModalVisible(true)}><Plus size={17} color={colors.primary} /><Text style={styles.addText}>기록</Text></Pressable></View>
-          <WeeklyCalendar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+          <View style={styles.heading}>
+            <Pressable accessibilityRole="button" accessibilityLabel="날짜 선택" style={styles.dateChip} onPress={() => setCalendarModalVisible(true)}>
+              <Text style={styles.dateChipText}>{formatDateLabel(selectedDate)}</Text>
+              <ChevronRight size={13} color={colors.primary} />
+            </Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel="기록 추가" style={styles.add} onPress={() => setAddRecordModalVisible(true)}><Plus size={17} color={colors.primary} /><Text style={styles.addText}>기록</Text></Pressable>
+          </View>
           <TravelRecordList activities={activities} />
           <Pressable accessibilityRole="button" style={styles.recordButton} onPress={() => setAddRecordModalVisible(true)}><Text style={styles.recordButtonText}>추억 기록하기</Text></Pressable>
           <Pressable accessibilityRole="button" style={styles.missionLink} onPress={() => setMissionsModalVisible(true)}><Text style={styles.addText}>오늘의 미션 {missions.filter(item => item.completed).length} / {missions.length} 완료 · 확인하기</Text></Pressable>
@@ -106,6 +117,12 @@ export default function RecordsScreen() {
           onClose={() => setAddRecordModalVisible(false)}
           onAdd={handleAddRecord}
         />
+        <MonthlyCalendarModal
+          visible={calendarModalVisible}
+          selectedDate={selectedDate}
+          onClose={() => setCalendarModalVisible(false)}
+          onSelectDate={setSelectedDate}
+        />
       </View>
     </SafeAreaView>
   );
@@ -115,7 +132,9 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: theme.colors.background },
   container: { flex: 1, backgroundColor: theme.colors.background },
   content: { paddingTop: 25, paddingBottom: 20 },
-  heading: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: 20, marginBottom: 14 },
+  heading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 14 },
+  dateChip: { flexDirection: 'row', alignItems: 'center', gap: 1, paddingVertical: 6, paddingHorizontal: 4 },
+  dateChipText: { fontSize: 13, color: colors.text, fontWeight: '700' },
   add: { flexDirection: 'row', alignItems: 'center', gap: 4, padding: 12, borderRadius: 16, backgroundColor: colors.primaryWeak },
   addText: { fontSize: 13, color: colors.primary, fontWeight: '600' },
   recordButton: { marginHorizontal: 20, marginTop: 18, minHeight: 48, justifyContent: 'center', alignItems: 'center', borderRadius: 15, backgroundColor: colors.primaryFill },

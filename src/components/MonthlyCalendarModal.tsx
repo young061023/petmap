@@ -7,7 +7,7 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { theme } from '../theme/theme';
 
 interface MonthlyCalendarModalProps {
@@ -16,6 +16,22 @@ interface MonthlyCalendarModalProps {
   onClose: () => void;
   onSelectDate: (date: Date) => void;
 }
+
+// The Setlog reference this was modeled on is dark, but a black sheet read
+// as out of place against the rest of this (light-themed) app — kept its
+// bottom-sheet layout (grabber bar, no close-X, chevron month nav) and just
+// swapped back to the app's own light palette.
+const palette = {
+  sheet: theme.colors.cardBackground,
+  border: theme.colors.border,
+  chip: theme.colors.background,
+  text: theme.colors.textMain,
+  muted: theme.colors.textSub,
+  sun: '#C4645F',
+  sat: theme.colors.blueStrong,
+  teal: theme.colors.primaryStrong,
+  onTeal: theme.colors.onPrimary,
+};
 
 const MONTH_NAMES_KOR = [
   '1월', '2월', '3월', '4월', '5월', '6월',
@@ -76,22 +92,19 @@ export const MonthlyCalendarModal: React.FC<MonthlyCalendarModalProps> = ({
       <View style={styles.overlay}>
         <Pressable style={styles.backdrop} onPress={onClose} />
         <View style={styles.modalSheet}>
+          <View style={styles.grabber} />
           <View style={styles.header}>
-            <View style={styles.monthHeaderRow}>
+            <Text style={styles.monthTitle}>
+              {year}년 {MONTH_NAMES_KOR[month]}
+            </Text>
+            <View style={styles.monthNavRow}>
               <Pressable onPress={handlePrevMonth} style={styles.arrowBtn}>
-                <ChevronLeft size={20} color={theme.colors.textMain} />
+                <ChevronLeft size={20} color={palette.teal} />
               </Pressable>
-              <Text style={styles.monthTitle}>
-                {year}년 {MONTH_NAMES_KOR[month]}
-              </Text>
               <Pressable onPress={handleNextMonth} style={styles.arrowBtn}>
-                <ChevronRight size={20} color={theme.colors.textMain} />
+                <ChevronRight size={20} color={palette.text} />
               </Pressable>
             </View>
-
-            <Pressable onPress={onClose} style={styles.closeBtn}>
-              <X size={20} color={theme.colors.textSub} />
-            </Pressable>
           </View>
 
           {/* Weekday Labels Header */}
@@ -101,8 +114,8 @@ export const MonthlyCalendarModal: React.FC<MonthlyCalendarModalProps> = ({
                 key={w}
                 style={[
                   styles.weekdayText,
-                  idx === 0 && { color: theme.colors.primaryStrong }, // Sun
-                  idx === 6 && { color: theme.colors.blueStrong }, // Sat
+                  idx === 0 && { color: palette.sun },
+                  idx === 6 && { color: palette.sat },
                 ]}
               >
                 {w}
@@ -120,6 +133,7 @@ export const MonthlyCalendarModal: React.FC<MonthlyCalendarModalProps> = ({
 
                 const selected = isSameDay(dayDate, selectedDate);
                 const dayNum = dayDate.getDate();
+                const weekday = dayDate.getDay();
 
                 return (
                   <Pressable
@@ -139,13 +153,14 @@ export const MonthlyCalendarModal: React.FC<MonthlyCalendarModalProps> = ({
                       <Text
                         style={[
                           styles.dayText,
+                          weekday === 0 && { color: palette.sun },
+                          weekday === 6 && { color: palette.sat },
                           selected && styles.dayTextSelected,
                         ]}
                       >
                         {dayNum}
                       </Text>
                     </View>
-                    {selected && <View style={styles.shortPointLine} />}
                   </Pressable>
                 );
               })}
@@ -160,19 +175,26 @@ export const MonthlyCalendarModal: React.FC<MonthlyCalendarModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(38, 53, 44, 0.32)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
   backdrop: StyleSheet.absoluteFill,
   modalSheet: {
-    backgroundColor: theme.colors.cardBackground,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    backgroundColor: palette.sheet,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 10,
     paddingBottom: 34,
     maxHeight: '75%',
-    ...theme.shadows.floating,
+  },
+  grabber: {
+    alignSelf: 'center',
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: palette.border,
+    marginBottom: 14,
   },
   header: {
     flexDirection: 'row',
@@ -180,38 +202,33 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 16,
   },
-  monthHeaderRow: {
+  monthNavRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 6,
   },
   monthTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: theme.colors.textMain,
+    color: palette.text,
   },
   arrowBtn: {
     padding: 6,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.background,
-  },
-  closeBtn: {
-    padding: 6,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.background,
+    borderRadius: 999,
+    backgroundColor: palette.chip,
   },
   weekdayHeader: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: palette.border,
     marginBottom: 10,
   },
   weekdayText: {
     fontSize: 13,
     fontWeight: '600',
-    color: theme.colors.textSub,
+    color: palette.muted,
     width: '14%',
     textAlign: 'center',
   },
@@ -230,31 +247,22 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   dayCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
   dayCircleSelected: {
-    backgroundColor: theme.colors.primary,
-    borderWidth: 1,
-    borderColor: theme.colors.pastelPink,
+    backgroundColor: palette.teal,
   },
   dayText: {
     fontSize: 15,
     fontWeight: '500',
-    color: theme.colors.textMain,
+    color: palette.text,
   },
   dayTextSelected: {
     fontWeight: '800',
-    color: theme.colors.onPrimary,
-  },
-  shortPointLine: {
-    width: 12,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: theme.colors.selectedUnderline,
-    marginTop: 2,
+    color: palette.onTeal,
   },
 });

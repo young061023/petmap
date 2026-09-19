@@ -5,9 +5,16 @@ import { colors } from '@/constants/theme';
 import type { LocalRecordMedia, TimelineActivity } from '@/types/record';
 
 function RecordMedia({ media }: { media: LocalRecordMedia }) {
-  const player = useVideoPlayer(media.type === 'video' ? media.uri : null);
+  // A silent, looping, non-interactive clip (like a GIF) rather than a
+  // normal video player the user can tap to pause/scrub — matches how
+  // apps like Setlog show a recorded moment as a short looping preview.
+  const player = useVideoPlayer(media.type === 'video' ? media.uri : null, (instance) => {
+    instance.loop = true;
+    instance.muted = true;
+    instance.play();
+  });
   if (media.type === 'photo') return <Image source={{ uri: media.uri }} style={styles.photo} resizeMode="cover" />;
-  return <VideoView player={player} style={styles.photo} contentFit="cover" nativeControls />;
+  return <VideoView player={player} style={styles.photo} contentFit="cover" nativeControls={false} pointerEvents="none" />;
 }
 
 export function TravelRecordList({ activities }: { activities: TimelineActivity[] }) {

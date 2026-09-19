@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   CameraView,
   type CameraMode,
@@ -67,8 +67,14 @@ export function RecordCameraModal({
 
   const permissionReady = cameraPermission?.granted;
 
+  // Rendered as an absolutely-positioned overlay inside AddRecordModal's own
+  // already-open <Modal> rather than as a second, separate <Modal> — RN
+  // silently fails to present a second native Modal while one is already
+  // open on iOS, which is why "지금 촬영하기" used to do nothing at all.
+  if (!visible) return null;
+
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={close}>
+    <View style={styles.overlayRoot}>
       <View style={styles.screen}>
         {permissionReady ? (
           <CameraView
@@ -120,11 +126,12 @@ export function RecordCameraModal({
           )}
         </SafeAreaView>
       </View>
-    </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  overlayRoot: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, elevation: 100 },
   screen: { flex: 1, backgroundColor: '#14231A' },
   controls: { flex: 1, justifyContent: 'space-between' },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 8 },

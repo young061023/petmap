@@ -230,13 +230,13 @@ export const AddRecordModal: React.FC<AddRecordModalProps> = ({
             <Text style={styles.submitText}>저장하기</Text>
           </Pressable>
         </View>
+        <RecordCameraModal
+          visible={cameraVisible}
+          onClose={() => setCameraVisible(false)}
+          onCaptured={setMedia}
+        />
       </KeyboardAvoidingView>
       </Modal>
-      <RecordCameraModal
-        visible={cameraVisible}
-        onClose={() => setCameraVisible(false)}
-        onCaptured={setMedia}
-      />
     </Fragment>
   );
 };

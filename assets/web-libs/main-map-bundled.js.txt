@@ -1,6 +1,6 @@
 "use strict";
 (() => {
-  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.HkZMotulB5/maplibre-gl-shared.js
+  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.IKoTjS8SZv/maplibre-gl-shared.js
   var e = Object.create;
   var t = Object.defineProperty;
   var n = Object.getOwnPropertyDescriptor;
@@ -11289,7 +11289,7 @@ Use an identity property function instead: \`{ "type": "identity", "property": $
     return `center`;
   }
 
-  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.HkZMotulB5/maplibre-gl.js
+  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.IKoTjS8SZv/maplibre-gl.js
   var import_meta = {};
   var Ar2 = `6.4.0`;
   function jr2() {
@@ -23283,7 +23283,7 @@ ${s37.shaderPreludeCode.vertexSource}`, define: s37.shaderDefine }, defaultProje
     vn.WORKER_URL = e63;
   }
 
-  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.HkZMotulB5/three.module.js
+  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.IKoTjS8SZv/three.module.js
   var Pf3 = 0;
   var Tu3 = 1;
   var Lf2 = 2;
@@ -39259,7 +39259,7 @@ void main() {
     }
   };
 
-  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.HkZMotulB5/utils/BufferGeometryUtils.js
+  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.IKoTjS8SZv/utils/BufferGeometryUtils.js
   function toTrianglesDrawMode(geometry, drawMode) {
     if (drawMode === Mm2) {
       console.warn("THREE.BufferGeometryUtils.toTrianglesDrawMode(): Geometry already defined as triangles.");
@@ -39315,7 +39315,7 @@ void main() {
     }
   }
 
-  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.HkZMotulB5/utils/SkeletonUtils.js
+  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.IKoTjS8SZv/utils/SkeletonUtils.js
   function clone(source) {
     const sourceLookup = /* @__PURE__ */ new Map();
     const cloneLookup = /* @__PURE__ */ new Map();
@@ -39345,7 +39345,7 @@ void main() {
     }
   }
 
-  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.HkZMotulB5/loaders/GLTFLoader.js
+  // ../../../../private/var/folders/5y/hrzvxhrx44gd8sphdrqnqldw0000gn/T/tmp.IKoTjS8SZv/loaders/GLTFLoader.js
   var GLTFLoader = class extends Ge2 {
     /**
      * Constructs a new glTF loader.
@@ -41887,6 +41887,7 @@ void main() {
   var BASE_ZOOM = 18;
   var IDLE_CLIP = "Survey";
   var WALK_CLIP = "Walk";
+  var WALK_TIME_SCALE = 0.55;
   var CROSSFADE_SECONDS = 0.3;
   var FOLLOW_EASE_MS = 350;
   var MODEL_SCALE_METERS = 6;
@@ -42022,6 +42023,7 @@ void main() {
           idle: idleClip ? mixer.clipAction(idleClip) : null,
           walk: walkClip ? mixer.clipAction(walkClip) : null
         };
+        if (actions.walk) actions.walk.timeScale = WALK_TIME_SCALE;
         setClip("idle");
         modelLoaded = true;
         setStatus("");
