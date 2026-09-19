@@ -87,7 +87,7 @@ export function AchievementUnlockCelebration({ achievement, onClose }: Achieveme
                 <View style={styles.routeDotBottom} />
               </View>
               <Animated.View style={[styles.badge, { transform: [{ scale: badgeScale }] }]}>
-                <Text style={styles.badgeIcon}>{achievement.icon}</Text>
+                <achievement.icon size={50} color={colors.onPrimary} />
               </Animated.View>
             </View>
 
@@ -121,7 +121,6 @@ const styles = StyleSheet.create({
   routeDotTop: { position: 'absolute', top: -5, left: 62, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary },
   routeDotBottom: { position: 'absolute', bottom: -5, right: 28, width: 10, height: 10, borderRadius: 5, backgroundColor: '#E7A977' },
   badge: { width: 104, height: 104, alignItems: 'center', justifyContent: 'center', borderRadius: 38, borderWidth: 4, borderColor: '#FFFFFF', backgroundColor: colors.primaryFill, shadowColor: colors.primary, shadowOpacity: 0.28, shadowRadius: 15, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
-  badgeIcon: { fontSize: 50 },
   acquired: { marginTop: 2, color: colors.primary, fontSize: 13, fontWeight: '900', letterSpacing: 1.6 },
   name: { marginTop: 8, color: colors.text, fontSize: 27, fontWeight: '900', letterSpacing: -0.8, textAlign: 'center' },
   description: { marginTop: 9, color: colors.body, fontSize: 15, lineHeight: 22, textAlign: 'center' },

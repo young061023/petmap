@@ -1,11 +1,15 @@
+import type { ComponentType } from 'react';
+
 export type AchievementCategory = 'exploration' | 'mission' | 'record' | 'special';
+
+export type AchievementIcon = ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
 
 export interface AchievementDefinition {
   id: string;
   category: AchievementCategory;
   name: string;
   description: string;
-  icon: string;
+  icon: AchievementIcon;
   target: number;
 }
 
